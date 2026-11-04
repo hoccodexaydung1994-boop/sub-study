@@ -238,7 +238,17 @@ details.panel>summary{font-weight:500;color:var(--fg);font-size:14px}
     </section>
 
     <section class="view" id="v-exam" hidden>
-      <p class="hint" style="margin:0 0 12px">Mô phỏng 4 dạng của bài thi nói Versant, câu lấy từ bài đang học. Mọi thứ tự động: AI đọc đề, bạn trả lời vào micro trong thời gian cho phép, trang chấm rồi chuyển câu. Không nhìn chữ ở phần B và D (giống thi thật).</p>
+      <div class="toolbar">
+        <span class="seg" id="exmode"><button class="small" data-m="learn" aria-pressed="true">Luyện từng dạng</button><button class="small" data-m="test" aria-pressed="false">Thi thử</button></span>
+      </div>
+      <div id="exlearn">
+        <p class="hint" style="margin:0 0 12px">Bốn dạng nói của Versant. Mỗi câu: bấm 🔊 nghe mẫu bao nhiêu lần tuỳ ý → 🎤 nói → xem từ xanh/đỏ → làm lại đến khi ≥ 90%. Câu lấy từ bộ luyện có sẵn + bài bạn đang học.</p>
+        <div class="toolbar"><span class="seg" id="lparts"><button class="small" data-p="A" aria-pressed="true">A · Đọc to</button><button class="small" data-p="B" aria-pressed="false">B · Nghe &amp; nhắc lại</button><button class="small" data-p="C" aria-pressed="false">C · Ghép câu</button><button class="small" data-p="D" aria-pressed="false">D · Trả lời ngắn</button></span></div>
+        <div class="hint" id="lguide" style="margin:0 0 12px"></div>
+        <div class="exam" id="learn"></div>
+      </div>
+      <div id="extest" hidden>
+      <p class="hint" style="margin:0 0 12px">Mô phỏng thi thật: AI đọc đề, bạn trả lời vào micro trong thời gian cho phép, trang chấm rồi tự chuyển câu. Không nhìn chữ ở phần B và D.</p>
       <div class="toolbar">
         <span class="seg" id="exparts">
           <button class="small" data-p="A" aria-pressed="true">A · Đọc to</button>
@@ -250,6 +260,7 @@ details.panel>summary{font-weight:500;color:var(--fg);font-size:14px}
         <button class="small" id="exstop" hidden>Dừng</button>
       </div>
       <div class="exam" id="exam"></div>
+      </div>
     </section>
 
     <section class="view" id="v-role" hidden>
@@ -397,7 +408,7 @@ function buildFrom(L){
   $('#lesson').hidden=false;
   const words=turns.reduce((n,t)=>n+t.text.split(/\s+/).length,0);
   $('#stats').innerHTML=`<span>Độ dài <b>${fmt(segs[segs.length-1].end)}</b></span><span>Lượt nói <b>${turns.length}</b></span><span>Số từ <b>${words}</b></span><span>Từ mới <b>${vb.filter(v=>!known.has(v.w)).length}</b></span>`;
-  renderRead();renderVocab();renderCloze();renderShadow();renderScript();renderCoach();resetChat();showView('read');
+  renderRead();renderVocab();renderCloze();renderShadow();renderScript();renderCoach();renderLearn();resetChat();showView('read');
 }
 
 // ---- 5. role-play ----
@@ -565,6 +576,46 @@ function examSummary(){
   d.innerHTML=`<div style="font-family:var(--serif);font-size:20px;font-weight:600">Tổng: <b>${avg(all)}%</b></div>`+Object.keys(byPart).map(p=>`<div>${labels[p]}: <b>${avg(byPart[p])}%</b> (${byPart[p].length} câu)</div>`).join('')+`<div class="hint" style="margin:8px 0 0">Đây là điểm theo độ chính xác máy nghe được, không quy đổi sang thang Versant. Dưới 70% ở phần nào thì quay lại tab Đọc theo AI luyện phần đó.</div>`;
   $('#exam').appendChild(d);d.scrollIntoView({block:'nearest'});
 }
+// ---- learn mode: one task type at a time, untimed, replay and retry ----
+const PRACTICE={ // original practice sentences written in the style of each task type
+  A:['The meeting has been moved to Thursday afternoon.','She usually takes the train because parking is expensive.','Could you send me the report before lunch?','We ran out of milk, so I stopped at the shop on the way home.','The new library opens at nine on weekdays.','He forgot his umbrella and got completely soaked.','Our flight was delayed by almost two hours.','I think the blue one suits you better than the grey one.'],
+  B:['The shop closes at six.','I left my keys on the table.','They are painting the kitchen this weekend.','Please call me when you arrive.','We need two more chairs for the meeting.','My brother lives near the station.','It rained all night, so the road is wet.','She asked whether the museum was open on Mondays.'],
+  C:['The bus was late this morning.','I would like a cup of tea, please.','We watched a film after dinner last night.','My neighbour plays the piano every evening.','Could you turn the music down a little?','They moved to a bigger flat in March.'],
+  D:[{q:'How many legs does a cat have?',a:['four','4']},{q:'What do you use to write on paper?',a:['pen','pencil']},{q:'Is the sun hot or cold?',a:['hot']},{q:'What is the opposite of fast?',a:['slow']},{q:'Which is smaller, a bus or a bicycle?',a:['bicycle','bike']},{q:'What do you drink when you are thirsty?',a:['water','juice','tea']},{q:'What day comes after Monday?',a:['tuesday']},{q:'Do you sleep in a bed or in a kitchen?',a:['bed']}],
+};
+const GUIDES={
+  A:'Dạng Đọc to: màn hình hiện câu, bạn đọc rõ ràng, tự nhiên, không ngắt từng từ. Máy chấm phát âm và độ trôi chảy. Mẹo: ngắt theo cụm nghĩa, nhấn từ mang nội dung, nối âm giữa các từ.',
+  B:'Dạng Nghe & nhắc lại: nghe một câu, nhắc lại y hệt. Khi học thì nhìn chữ được; khi thi sẽ không có chữ. Mẹo: nhớ theo cụm (2–3 cụm/câu) chứ không nhớ từng từ; giữ nguyên ngữ điệu của câu mẫu.',
+  C:'Dạng Ghép câu: nghe 3 mảnh câu bị xáo, nói lại thành một câu đúng thứ tự. Mẹo: tìm mảnh có chủ ngữ (I, we, the bus…) để đặt đầu câu, mảnh có dấu chấm/dấu hỏi đặt cuối.',
+  D:'Dạng Trả lời ngắn: nghe một câu hỏi đơn giản, trả lời bằng 1–2 từ. Mẹo: nghe từ khoá (how many, which, what…); trả lời ngay, không nói cả câu.',
+};
+let lpart='A';
+function renderLearn(){
+  $('#lguide').textContent=GUIDES[lpart];
+  const items=[];
+  if(lpart==='D'){for(const x of PRACTICE.D)items.push({part:'D',text:x.q,answers:x.a})}
+  else{const extra=lpart==='A'?pickLines(4,6,16):lpart==='B'?pickLines(4,5,12):pickLines(3,6,12);for(const s of [...PRACTICE[lpart],...extra]){const it={part:lpart,text:s};if(lpart==='C'){const ch=splitThree(s);const sh=ch.slice();shuffle(sh,mulberry(s.length));if(sh.join()===ch.join())sh.reverse();it.chunks=sh}items.push(it)}}
+  $('#learn').innerHTML=items.map((it,i)=>`<div class="exq" data-i="${i}"><div class="eyebrow"><span>${i+1}</span><span class="best"></span></div><div class="prompt">${it.part==='C'?it.chunks.map(c=>`<span class="chip">${esc(c)}</span>`).join(''):it.part==='D'?esc(it.text):esc(it.text)}</div><div class="state"></div><div class="cbtns" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"><button class="small" data-hear>🔊 Nghe</button><button class="small mic" data-say style="width:auto;border-radius:6px;font-size:13px">🎤 Nói</button>${it.part!=='A'?'<button class="small" data-hint>Gợi ý</button>':''}</div></div>`).join('');
+  $('#learn')._items=items;
+}
+$('#lparts').onclick=e=>{const b=e.target.closest('button');if(!b)return;lpart=b.dataset.p;[...e.currentTarget.children].forEach(x=>x.setAttribute('aria-pressed',x===b));renderLearn()};
+$('#learn').onclick=async e=>{
+  const b=e.target.closest('button');if(!b)return;const box=b.closest('.exq');const it=$('#learn')._items[+box.dataset.i];const st=box.querySelector('.state'),prompt=box.querySelector('.prompt');
+  if(b.hasAttribute('data-hear')){if(it.part==='C'){for(const c of it.chunks){await speakAsync(c,0.9);await new Promise(r=>setTimeout(r,300))}}else await speakAsync(it.text,0.9);return}
+  if(b.hasAttribute('data-hint')){if(it.part==='C')st.textContent='Câu đúng: '+it.text;else if(it.part==='D')st.textContent='Trả lời: '+it.answers[0];else st.textContent=it.text;return}
+  if(rec){try{rec.stop()}catch(x){}return}
+  b.classList.add('on');st.textContent='🎤 Đang nghe…';let heard='';
+  try{heard=await listenAsync(h=>{st.textContent='🎤 '+h})}catch(err){b.classList.remove('on');st.textContent=err==='denied'?'Không có quyền micro. Mở bằng Chrome trên GitHub Pages/Vercel và bấm Allow.':'Không mở được micro.';return}
+  b.classList.remove('on');
+  if(!heard){st.textContent='Không nghe thấy gì, thử lại.';return}
+  let score;
+  if(it.part==='D'){const H=norm(heard).join(' ');score=it.answers.some(a=>(' '+H+' ').includes(' '+a.toLowerCase()+' '))?100:0;st.textContent=`Máy nghe: “${heard}” → ${score?'✓ đúng':'✗ chưa đúng'}`}
+  else{const r=markWords(it.text,heard);const w=r.n?Math.round(100*r.ok/r.n):0;score=it.part==='C'?Math.round((w+orderScore(it.text,heard))/2):w;if(it.part==='C')prompt.innerHTML=r.html;else prompt.innerHTML=r.html;st.textContent=`Máy nghe: “${heard}” · ${score}%`+(score<90?' — đọc lại, nhấn rõ từ đỏ.':' — tốt!')}
+  const best=box.querySelector('.best');const prev=+(best.dataset.v||0);if(score>prev){best.dataset.v=score;best.textContent='Tốt nhất: '+score+'%'}
+  box.classList.toggle('ok',score>=90);box.classList.toggle('bad',score<90);
+};
+$('#exmode').onclick=e=>{const b=e.target.closest('button');if(!b)return;[...e.currentTarget.children].forEach(x=>x.setAttribute('aria-pressed',x===b));const learn=b.dataset.m==='learn';$('#exlearn').hidden=!learn;$('#extest').hidden=learn;if(!learn)examStop();if(learn)renderLearn()};
+
 $('#exparts').onclick=e=>{const b=e.target.closest('button');if(!b)return;b.setAttribute('aria-pressed',b.getAttribute('aria-pressed')!=='true')};
 $('#exstart').onclick=examStart;$('#exstop').onclick=examStop;
 
