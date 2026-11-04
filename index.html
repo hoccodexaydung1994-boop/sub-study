@@ -106,6 +106,20 @@ details.panel>summary{font-weight:500;color:var(--fg);font-size:14px}
 .bub .fix{display:block;font-family:var(--sans);font-size:13px;color:var(--muted);margin-top:6px;border-top:1px dashed var(--line);padding-top:6px}
 .chatbar{display:flex;gap:8px;flex-wrap:wrap}
 .mic{font-size:16px;padding:6px 10px}
+.spk{border:none;background:transparent;padding:0 4px;font-size:13px;cursor:pointer;vertical-align:middle}
+.coach{display:grid;gap:10px}
+.chunk{padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--panel);opacity:.55}
+.chunk.cur{opacity:1;border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+.chunk.done{opacity:.8;border-color:var(--ok)}
+.chunk .ctext{font-family:var(--serif);font-size:20px;line-height:1.5}
+.chunk .ctext .wok{color:var(--ok)}.chunk .ctext .wbad{color:var(--bad);text-decoration:underline dotted}
+.chunk .cstate{font-size:13px;color:var(--muted);margin-top:6px;min-height:1.4em}
+.chunk .ctip{font-size:14px;margin-top:8px;padding:8px 10px;border-radius:8px;background:var(--accent-soft);white-space:pre-wrap}
+.chunk .cbtns{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.readmic{width:auto;border-radius:999px;padding:4px 10px;font-size:12px;margin-left:8px}
+.heard{margin-top:8px;font-family:var(--serif);font-size:16px;line-height:1.6}
+.heard .wok{color:var(--ok)}.heard .wbad{color:var(--bad);text-decoration:underline dotted}
+.heard .sim{font-family:var(--sans);font-size:12px;font-weight:600;margin-left:8px;padding:2px 8px;border-radius:999px;background:var(--accent-soft);color:var(--accent)}
 .mic.on{background:var(--bad);color:#fff;border-color:var(--bad)}
 @media (prefers-reduced-motion:no-preference){.mic.on{animation:pulse 1s infinite}}
 @keyframes pulse{50%{opacity:.6}}
@@ -125,7 +139,7 @@ details.panel>summary{font-weight:500;color:var(--fg);font-size:14px}
       <div class="field"><label for="apikey">Khoá API Anthropic (lưu trong trình duyệt này)</label><input id="apikey" type="password" placeholder="sk-ant-…" autocomplete="off"></div>
       <div class="field"><label for="model">Model</label><input id="model" type="text" value="claude-haiku-5-5"></div>
     </div>
-    <div class="toolbar"><button class="primary small" id="savekey">Lưu</button><button class="small" id="clearkey">Xoá khoá</button><span class="hint" style="margin:0">Lấy khoá tại console.anthropic.com. Không chia sẻ file này khi đã lưu khoá trong trình duyệt khác, khoá chỉ nằm ở máy bạn.</span></div>
+    <div class="toolbar"><button class="primary small" id="savekey">Lưu</button><button class="small" id="clearkey">Xoá khoá</button><span class="hint" style="margin:0">Lấy khoá tại console.anthropic.com. Khoá chỉ nằm trong trình duyệt của bạn; không ghi khoá vào file HTML.</span></div>
   </details>
 
   <div class="lib">
@@ -150,6 +164,7 @@ details.panel>summary{font-weight:500;color:var(--fg);font-size:14px}
     <div class="toolbar">
       <button class="primary" id="go">Xem thử</button>
       <button class="primary" id="save" hidden>Lưu vào thư viện</button>
+      <label class="small" style="margin:0;text-transform:none;letter-spacing:0;font-size:13px;cursor:pointer;border:1px solid var(--line);border-radius:6px;padding:7px 12px;color:var(--fg)">Nhập file .txt<input id="txtfile" type="file" accept=".txt,.srt,.vtt,text/plain" multiple hidden></label>
       <button id="sample">Dùng bài mẫu</button>
       <span class="hint" style="margin:0">Ngưỡng đổi người: <input id="gap" type="text" value="1.0" style="width:4em;padding:3px 6px"> giây</span>
     </div>
@@ -164,6 +179,7 @@ details.panel>summary{font-weight:500;color:var(--fg);font-size:14px}
       <button role="tab" data-v="cloze">3 · Điền từ</button>
       <button role="tab" data-v="shadow">4 · Shadowing</button>
       <button role="tab" data-v="role">5 · Nhập vai</button>
+      <button role="tab" data-v="coach">6 · Đọc theo AI</button>
     </div>
     <div class="stats" id="stats"></div>
 
@@ -194,6 +210,17 @@ details.panel>summary{font-weight:500;color:var(--fg);font-size:14px}
     <section class="view" id="v-shadow" hidden>
       <div class="toolbar"><span class="hint" style="margin:0">Mở video ở mốc giờ, nghe 1 câu, dừng, nhại y hệt ngữ điệu. Đánh dấu mỗi lần lặp, mục tiêu 3 lần/câu.</span></div>
       <div class="shadow" id="shadow"></div>
+    </section>
+
+    <section class="view" id="v-coach" hidden>
+      <p class="hint" style="margin:0 0 12px">AI đọc một cụm ngắn → bạn đọc lại → máy nghe và tô đỏ từ chưa chuẩn → AI đọc lại chậm hơn, kèm mẹo phát âm (khi có khoá API) → đúng rồi mới sang cụm kế. Dùng Chrome/Edge, cho phép micro.</p>
+      <div class="toolbar">
+        <label style="margin:0;text-transform:none;letter-spacing:0;font-size:13px">Câu: <select id="cline" style="font:inherit;max-width:60vw"></select></label>
+        <button class="primary small" id="cstart">Bắt đầu</button>
+        <button class="small" id="cstop" hidden>Dừng</button>
+        <span class="hint" style="margin:0">Tốc độ: <select id="crate" style="font:inherit"><option value="0.75">chậm</option><option value="0.9" selected>vừa</option><option value="1">tự nhiên</option></select></span>
+      </div>
+      <div class="coach" id="coach"></div>
     </section>
 
     <section class="view" id="v-role" hidden>
@@ -341,7 +368,7 @@ function buildFrom(L){
   $('#lesson').hidden=false;
   const words=turns.reduce((n,t)=>n+t.text.split(/\s+/).length,0);
   $('#stats').innerHTML=`<span>Độ dài <b>${fmt(segs[segs.length-1].end)}</b></span><span>Lượt nói <b>${turns.length}</b></span><span>Số từ <b>${words}</b></span><span>Từ mới <b>${vb.filter(v=>!known.has(v.w)).length}</b></span>`;
-  renderRead();renderVocab();renderCloze();renderShadow();renderScript();resetChat();showView('read');
+  renderRead();renderVocab();renderCloze();renderShadow();renderScript();renderCoach();resetChat();showView('read');
 }
 
 // ---- 5. role-play ----
@@ -377,7 +404,7 @@ Rules:
 - Never explain the rules, never say you are an AI, never switch to Vietnamese except inside the bracketed note.
 - First message: open the scene as ${ai} in one or two sentences.`;
 }
-function fill(d,name,text){const m=text.match(/\n?\[(Sửa|Tốt)\]\s*(.*)$/s);const body=m?text.slice(0,m.index).trim():text;d.innerHTML=`<span class="nm">${esc(name)}</span>${esc(body)}${m?`<span class="fix">${(m[1]==='Sửa'?'✎ ':'✓ ')+esc(m[2])}</span>`:''}`}
+function fill(d,name,text){const m=text.match(/\n?\[(Sửa|Tốt)\]\s*(.*)$/s);const body=m?text.slice(0,m.index).trim():text;d.dataset.text=body;d.innerHTML=`<span class="nm">${esc(name)}${d.classList.contains('ai')?' <button class="spk" type="button" aria-label="Nghe lại">🔊</button>':''}</span>${esc(body)}${m?`<span class="fix">${(m[1]==='Sửa'?'✎ ':'✓ ')+esc(m[2])}</span>`:''}`}
 function bubble(cls,name,text){const d=document.createElement('div');d.className='bub '+cls;fill(d,name,text);$('#chat').appendChild(d);d.scrollIntoView({block:'nearest'});return d}
 async function ask(){
   if(!sample){$('#chatnote').textContent='Chưa có khoá API: mở "Kết nối AI" ở đầu trang và dán khoá vào.';return}
@@ -394,7 +421,7 @@ async function ask(){
 }
 // ---- guided: AI follows the script, grades the learner's turn ----
 let gIdx=0,gBusy=false;
-function gBubble(cls,name,text){const d=document.createElement('div');d.className='bub '+cls;d.innerHTML=`<span class="nm">${esc(name)}</span>${esc(text)}`;$('#gchat').appendChild(d);d.scrollIntoView({block:'nearest'});return d}
+function gBubble(cls,name,text){const d=document.createElement('div');d.className='bub '+cls;d.dataset.text=text;d.innerHTML=`<span class="nm">${esc(name)}${cls==='ai'?' <button class="spk" type="button" aria-label="Nghe lại">🔊</button>':''}</span>${esc(text)}`;$('#gchat').appendChild(d);d.scrollIntoView({block:'nearest'});return d}
 function gPlayAI(){ // show the other role's lines until it's the learner's turn
   const spoken=[];
   while(gIdx<turns.length&&turns[gIdx].spk!==myRole){gBubble('ai',turns[gIdx].name,turns[gIdx].text);spoken.push(turns[gIdx].text);gIdx++}
@@ -432,6 +459,63 @@ $('#gform').onsubmit=e=>{e.preventDefault();const v=$('#gin').value.trim();if(!v
 $('#ghint').onclick=()=>{if(gIdx<turns.length){const w=turns[gIdx].text.split(/\s+/);$('#gnote').textContent='Gợi ý: '+w.slice(0,Math.ceil(w.length/3)).join(' ')+' …'}};
 $('#greset').onclick=gReset;
 
+// ---- 6. coach: AI reads a chunk, learner repeats, mismatches are corrected before moving on ----
+let coachRun=false,coachIdx=0,coachChunks=[],coachTries=0;
+function chunkLine(text){
+  const parts=text.split(/(?<=[,;:.?!—–-])\s+/).flatMap(p=>{const w=p.split(/\s+/).filter(Boolean);const out=[];for(let i=0;i<w.length;i+=5)out.push(w.slice(i,i+5).join(' '));return out});
+  // merge very short tails ("too." / "you?") into the previous chunk
+  const m=[];for(const p of parts){if(m.length&&p.split(/\s+/).length<=1)m[m.length-1]+=' '+p;else m.push(p)}return m;
+}
+function speakAsync(text,rate){return new Promise(res=>{try{if(!('speechSynthesis'in window))return res();speechSynthesis.cancel();setTimeout(()=>{const u=new SpeechSynthesisUtterance(text);u.lang='en-GB';u.rate=rate;if(!voices.length)loadVoices();const v=voices.find(v=>/^en[-_]GB/i.test(v.lang))||voices.find(v=>/^en/i.test(v.lang));if(v)u.voice=v;let done=false;const fin=()=>{if(!done){done=true;res()}};u.onend=fin;u.onerror=fin;setTimeout(fin,Math.max(2500,text.length*120));speechSynthesis.speak(u)},60)}catch(e){res()}})}
+function listenAsync(onInterim){return new Promise((res,rej)=>{const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR)return rej('nosr');if(rec){try{rec.stop()}catch(e){}}
+  const r=new SR();rec=r;r.lang='en-US';r.interimResults=true;r.continuous=false;let heard='',err=null;
+  r.onresult=ev=>{heard='';for(const x of ev.results)heard+=x[0].transcript;onInterim&&onInterim(heard)};
+  r.onerror=ev=>{err=ev.error};r.onend=()=>{if(rec===r)rec=null;if(err==='not-allowed'||err==='service-not-allowed')rej('denied');else res(heard.trim())};
+  try{r.start()}catch(e){rec=null;rej('start')}})}
+function markWords(target,heard){const H=new Set(norm(heard));let ok=0,n=0,bad=[];const html=target.split(/(\s+)/).map(w=>{if(/^\s*$/.test(w))return w;const k=w.toLowerCase().replace(/[^a-z']/g,'');if(!k)return esc(w);n++;const hit=H.has(k);if(hit)ok++;else bad.push(k);return `<span class="${hit?'wok':'wbad'}">${esc(w)}</span>`}).join('');return {html,ok,n,bad}}
+function renderCoach(){
+  const sel=$('#cline');sel.innerHTML=turns.map((t,i)=>`<option value="${i}">${esc((t.name+': '+t.text).slice(0,70))}${t.text.length>60?'…':''}</option>`).join('');
+  $('#coach').innerHTML='';coachStop();
+}
+function coachStop(){coachRun=false;try{speechSynthesis.cancel()}catch(e){}if(rec){try{rec.stop()}catch(e){}}$('#cstart').hidden=false;$('#cstop').hidden=true}
+async function coachStart(){
+  const t=turns[+$('#cline').value];if(!t)return;
+  coachChunks=chunkLine(t.text);coachIdx=0;coachTries=0;coachRun=true;$('#cstart').hidden=true;$('#cstop').hidden=false;
+  $('#coach').innerHTML=coachChunks.map((c,i)=>`<div class="chunk" data-i="${i}"><div class="ctext">${esc(c)}</div><div class="cstate"></div><div class="ctip" hidden></div><div class="cbtns" hidden><button class="small" data-again>🔊 Nghe lại</button><button class="small" data-retry>🎤 Đọc lại</button><button class="small" data-skip>Bỏ qua</button></div></div>`).join('');
+  coachStep();
+}
+async function coachStep(){
+  if(!coachRun)return;
+  document.querySelectorAll('.chunk').forEach(c=>c.classList.remove('cur'));
+  if(coachIdx>=coachChunks.length){coachRun=false;$('#cstart').hidden=false;$('#cstop').hidden=true;const d=document.createElement('p');d.className='hint';d.textContent='Xong câu này. Giờ đọc cả câu một lần ở tab Shadowing (🎤 Đọc thử), hoặc chọn câu khác.';$('#coach').appendChild(d);return}
+  const box=document.querySelector(`.chunk[data-i="${coachIdx}"]`);box.classList.add('cur');box.scrollIntoView({block:'nearest'});
+  const text=coachChunks[coachIdx],st=box.querySelector('.cstate'),rate=+$('#crate').value-(coachTries?0.15:0);
+  st.textContent='🔊 AI đang đọc…';await speakAsync(text,Math.max(0.6,rate));if(!coachRun)return;
+  st.textContent='🎤 Đến lượt bạn, đọc cụm này…';
+  let heard='';
+  try{heard=await listenAsync(h=>{st.textContent='Nghe được: '+h})}
+  catch(e){st.textContent=e==='denied'?'Trình duyệt không cho dùng micro. Mở trang trên GitHub Pages/Vercel bằng Chrome và bấm Allow.':e==='nosr'?'Trình duyệt không có nhận dạng giọng nói. Dùng Chrome hoặc Edge.':'Không mở được micro.';box.querySelector('.cbtns').hidden=false;return}
+  if(!coachRun)return;
+  if(!heard){st.textContent='Không nghe thấy gì. Nói to hơn một chút nhé.';coachTries++;box.querySelector('.cbtns').hidden=false;if(coachTries<3)return coachStep();return}
+  const r=markWords(text,heard);box.querySelector('.ctext').innerHTML=r.html;
+  if(r.bad.length===0){st.textContent='✓ Chuẩn rồi. Máy nghe: “'+heard+'”';box.classList.add('done');box.classList.remove('cur');coachIdx++;coachTries=0;return coachStep()}
+  coachTries++;st.textContent=`Máy nghe: “${heard}”. Chưa rõ: ${r.bad.join(', ')}.`;
+  const tip=box.querySelector('.ctip');
+  if(sample&&coachTries===1){tip.hidden=false;tip.textContent='Đang hỏi AI cách phát âm…';
+    try{const {text:ans}=await sample(`Người học tiếng Anh là người Việt vừa đọc cụm: "${text}". Máy nhận dạng nghe thành: "${heard}". Từ chưa được nhận ra: ${r.bad.join(', ')}.
+Viết tối đa 3 dòng tiếng Việt, mỗi dòng cho một từ chưa rõ: phiên âm IPA, lỗi người Việt hay mắc với từ đó (âm cuối, nguyên âm dài/ngắn, trọng âm...), và cách khắc phục ngắn gọn. Không chào hỏi, không giải thích thêm.`,{modelTier:'quick'});tip.textContent=ans.trim()}
+    catch(e){tip.textContent=e.code==='not_granted'?'(Không có AI: hãy nghe lại và nhấn rõ các từ đỏ.)':'(AI chưa trả lời được, nghe lại và thử tiếp.)'}
+  }else if(!sample&&coachTries===1){tip.hidden=false;tip.textContent='Mẹo chung: đọc chậm, nhấn rõ âm cuối (-s, -t, -ed), kéo dài nguyên âm dài. Có khoá API thì AI sẽ chỉ cụ thể từng từ.'}
+  if(!coachRun)return;
+  if(coachTries<3){return coachStep()}
+  st.textContent+=' Đã thử 3 lần — bạn có thể nghe lại, đọc lại hoặc bỏ qua.';box.querySelector('.cbtns').hidden=false;
+}
+$('#cstart').onclick=coachStart;$('#cstop').onclick=coachStop;
+$('#coach').onclick=async e=>{const b=e.target.closest('button');if(!b)return;const box=b.closest('.chunk');coachIdx=+box.dataset.i;coachRun=true;$('#cstart').hidden=true;$('#cstop').hidden=false;box.querySelector('.cbtns').hidden=true;
+  if(b.hasAttribute('data-skip')){coachIdx++;coachTries=0;return coachStep()}
+  if(b.hasAttribute('data-again')){coachTries=1;return coachStep()}
+  if(b.hasAttribute('data-retry')){coachTries=Math.min(coachTries,2);return coachStep()}};
+
 function resetChat(){chatTurns=[];$('#chat').innerHTML='';$('#chatnote').textContent='';gReset();if(mode==='free')startChat()}
 function startChat(){chatTurns=[{role:'user',content:'(Start the scene.)'}];ask()}
 $('#chatform').onsubmit=e=>{e.preventDefault();const v=$('#chatin').value.trim();if(!v||chatCtl)return;$('#chatin').value='';bubble('me',names[myRole],v);chatTurns.push({role:'user',content:v});if(chatTurns.length>24)chatTurns.splice(1,2);ask()};
@@ -439,19 +523,51 @@ $('#chatstop').onclick=()=>chatCtl&&chatCtl.abort();
 $('#chatreset').onclick=()=>{if(chatCtl)chatCtl.abort();resetChat()};
 
 // ---- voice: speak AI lines, dictate the learner's lines ----
+let voices=[],pendingSay=null,userTouched=false;
+function loadVoices(){try{voices=speechSynthesis.getVoices()}catch(e){}}
+if('speechSynthesis'in window){loadVoices();speechSynthesis.onvoiceschanged=loadVoices}
 function say(text){
   try{
     if(!$('#speak').checked||!('speechSynthesis'in window))return;
     const clean=text.replace(/\n?\[(Sửa|Tốt)\][\s\S]*$/,'').trim();if(!clean)return;
-    speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(clean);u.lang='en-GB';u.rate=0.95;
-    const v=speechSynthesis.getVoices().find(v=>/^en-GB/i.test(v.lang))||speechSynthesis.getVoices().find(v=>/^en/i.test(v.lang));if(v)u.voice=v;
-    speechSynthesis.speak(u);
+    if(!userTouched){pendingSay=clean;return} // Chrome needs a click before it will speak
+    speechSynthesis.cancel();
+    setTimeout(()=>{ // a cancel() right before speak() can swallow the utterance in Chrome
+      const u=new SpeechSynthesisUtterance(clean);u.lang='en-GB';u.rate=0.95;
+      if(!voices.length)loadVoices();
+      const v=voices.find(v=>/^en[-_]GB/i.test(v.lang))||voices.find(v=>/^en/i.test(v.lang));if(v)u.voice=v;
+      speechSynthesis.speak(u);
+    },60);
   }catch(e){}
 }
+document.addEventListener('pointerdown',()=>{if(userTouched)return;userTouched=true;if(pendingSay){const t=pendingSay;pendingSay=null;say(t)}},{capture:true});
+document.addEventListener('click',e=>{const b=e.target.closest('.spk');if(b){const box=b.closest('[data-text]');if(box)say(box.dataset.text)}});
+
+// read a shadowing line aloud and check what the recognizer heard
+document.addEventListener('click',e=>{
+  const b=e.target.closest('.readmic');if(!b)return;
+  const line=b.closest('.sline');const target=line.dataset.text;const outEl=line.querySelector('.heard');
+  if(rec){rec.stop();return}
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  outEl.hidden=false;
+  if(!SR){outEl.textContent='Trình duyệt này không có nhận dạng giọng nói. Dùng Chrome hoặc Edge.';return}
+  try{
+    rec=new SR();rec.lang='en-US';rec.interimResults=true;b.classList.add('on');try{speechSynthesis.cancel()}catch(x){}
+    let heard='';outEl.textContent='Đang nghe… hãy đọc câu trên.';
+    rec.onresult=ev=>{heard='';for(const r of ev.results)heard+=r[0].transcript;outEl.textContent='Nghe được: '+heard};
+    rec.onerror=ev=>{outEl.textContent=ev.error==='not-allowed'||ev.error==='service-not-allowed'?'Trang không được phép dùng micro ở đây. Mở trang trên GitHub Pages/Vercel hoặc cho phép micro trong thanh địa chỉ.':'Không nghe được, thử lại.'};
+    rec.onend=()=>{b.classList.remove('on');rec=null;if(!heard.trim())return;
+      const H=new Set(norm(heard));const words=target.split(/(\s+)/);let ok=0,n=0;
+      const html=words.map(w=>{if(/^\s*$/.test(w))return w;const k=w.toLowerCase().replace(/[^a-z']/g,'');if(!k)return esc(w);n++;const hit=H.has(k);if(hit)ok++;return `<span class="${hit?'wok':'wbad'}">${esc(w)}</span>`}).join('');
+      const pct=n?Math.round(100*ok/n):0;
+      outEl.innerHTML=`${html}<span class="sim">${pct}%</span><div class="hint" style="margin:4px 0 0">Máy nghe: “${esc(heard)}”. Từ đỏ là máy không nhận ra — đọc chậm lại, nhấn rõ âm cuối, rồi thử lần nữa.</div>`};
+    rec.start();
+  }catch(err){rec=null;b.classList.remove('on');outEl.textContent='Không mở được micro.'}
+});
 let rec=null,recBtn=null;
 function micHint(where){where.textContent='Trình duyệt này không cho trang nghe micro. Cách khác: bấm vào ô chữ rồi dùng nút micro trên bàn phím điện thoại (Gboard / iPhone), hoặc Win+H trên Windows, double-tap Fn trên Mac để đọc chính tả.'}
 document.addEventListener('click',e=>{
-  const b=e.target.closest('.mic');if(!b)return;
+  const b=e.target.closest('.mic');if(!b||b.classList.contains('readmic'))return;
   const input=document.getElementById(b.dataset.mic);const note=$(b.dataset.mic==='gin'?'#gnote':'#chatnote');
   if(rec){rec.stop();return}
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
@@ -484,7 +600,7 @@ function renderCloze(){
 }
 function renderShadow(){
   const c=turns.filter(t=>{const n=t.text.split(/\s+/).length;return n>=6&&n<=16}).sort((a,b)=>Math.abs(a.text.split(/\s+/).length-10)-Math.abs(b.text.split(/\s+/).length-10)).slice(0,10).sort((a,b)=>a.start-b.start);
-  $('#shadow').innerHTML=c.map(t=>{const u=ytAt(t.start);return `<div class="sline"><div class="t">${u?`<a href="${u}" target="_blank" rel="noopener">▶ ${fmt(t.start)}</a>`:`<span style="font-family:var(--mono);font-size:13px;color:var(--muted)">${fmt(t.start)}</span>`}</div><div><p>${esc(t.text)}</p><div class="reps"><button aria-label="lần 1">1</button><button aria-label="lần 2">2</button><button aria-label="lần 3">3</button></div></div></div>`}).join('')||'<p class="empty">Chưa có câu nào đủ ngắn để luyện.</p>';
+  $('#shadow').innerHTML=c.map(t=>{const u=ytAt(t.start);return `<div class="sline" data-text="${esc(t.text)}"><div class="t">${u?`<a href="${u}" target="_blank" rel="noopener">▶ ${fmt(t.start)}</a>`:`<span style="font-family:var(--mono);font-size:13px;color:var(--muted)">${fmt(t.start)}</span>`}<br><button class="spk small" type="button" aria-label="Nghe máy đọc">🔊</button></div><div><p>${esc(t.text)}</p><div class="reps"><button aria-label="lần 1">1</button><button aria-label="lần 2">2</button><button aria-label="lần 3">3</button><button class="mic small readmic" type="button" aria-label="Đọc và kiểm tra">🎤 Đọc thử</button></div><div class="heard" hidden></div></div></div>`}).join('')||'<p class="empty">Chưa có câu nào đủ ngắn để luyện.</p>';
 }
 function showView(v){document.querySelectorAll('.tabs [role=tab]').forEach(b=>b.setAttribute('aria-selected',b.dataset.v===v));document.querySelectorAll('section.view').forEach(s=>s.hidden=s.id!=='v-'+v)}
 function mulberry(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
@@ -492,6 +608,16 @@ function shuffle(arr,r){for(let i=arr.length-1;i>0;i--){const j=Math.floor(r()*(
 
 // ---- events ----
 $('#go').onclick=build;
+$('#txtfile').onchange=async e=>{
+  const files=[...e.target.files];e.target.value='';if(!files.length)return;
+  for(const f of files){
+    let raw=await f.text();
+    let names='';const m=raw.match(/^\s*speakers?\s*:\s*(.+)$/im);if(m){names=m[1].trim();raw=raw.replace(m[0],'')}
+    $('#title').value=f.name.replace(/\.(txt|srt|vtt)$/i,'');$('#names').value=names||$('#names').value||'A, B';$('#url').value='';$('#raw').value=raw;
+    if(!parse(raw).length){$('#savenote').textContent=`Không đọc được "${f.name}": thiếu mốc giờ ở đầu đoạn.`;continue}
+    if(canEdit&&!$('#save').hidden){$('#save').click();await new Promise(r=>setTimeout(r,800))}else build();
+  }
+};
 $('#sample').onclick=()=>{$('#raw').value=SAMPLE;$('#url').value='';$('#names').value='Mia, Tom';$('#title').value='Bài mẫu: Jet lag';build()};
 document.querySelector('.tabs').onclick=e=>{const b=e.target.closest('[role=tab]');if(b)showView(b.dataset.v)};
 $('#vocab').onclick=e=>{const b=e.target.closest('button');if(!b)return;const w=b.closest('.vword').dataset.w;known.has(w)?known.delete(w):known.add(w);store.set('known',[...known]);renderVocab();renderCloze()};
@@ -521,7 +647,7 @@ const SAMPLE=`0:00 Hi Tom, you look exhausted. Late night?
 0:49 That's going to be a struggle. My sofa is very persuasive.
 0:53 Then put your phone on the other side of the room and go for the walk instead.
 0:58 Deal. Remind me of this conversation when I'm grumpy at three o'clock.`;
-// ---- library (kept in this browser; export/import as JSON) ----
+// ---- library (kept in this browser; lessons.json next to the page is merged in; export/import as JSON) ----
 let db=true,canEdit=true,lessons=store.get('lessons',[]),activeId=null;
 function persist(){store.set('lessons',lessons);renderCards()}
 function renderCards(){
@@ -543,12 +669,11 @@ $('#save').onclick=()=>{
   L.id='l'+Date.now().toString(36);L.createdAt=Date.now();lessons.unshift(L);persist();
   $('#savenote').textContent='Đã lưu "'+L.title+'" vào thư viện.';$('#raw').value='';$('#title').value='';$('#url').value='';$('#addpanel').open=false;
 };
-$('#export').onclick=()=>{const blob=new Blob([JSON.stringify(lessons,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='sub-study-lessons.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),5000)};
+$('#export').onclick=()=>{const blob=new Blob([JSON.stringify(lessons,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='lessons.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),5000)};
 $('#import').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const arr=JSON.parse(r.result);if(!Array.isArray(arr))throw 0;const have=new Set(lessons.map(x=>x.id));for(const L of arr){if(L&&L.raw&&!have.has(L.id)){if(!L.id)L.id='l'+Math.random().toString(36).slice(2);lessons.push(L)}}persist();$('#libcount').textContent=lessons.length+' bài (đã nhập)'}catch(err){$('#savenote').textContent='File JSON không đúng định dạng.'}};r.readAsText(f);e.target.value=''};
 $('#save').hidden=false;$('#addtitle').textContent='Thêm bài học vào thư viện';$('#go').textContent='Xem thử trước';
 renderCards();
 if(lessons.length){activeId=lessons[0].id;renderCards();buildFrom(lessons[0])}
-// lessons.json next to this page (uploaded by the site owner) is merged in on load
 fetch('lessons.json',{cache:'no-store'}).then(r=>r.ok?r.json():null).then(arr=>{
   if(!Array.isArray(arr))return;const have=new Set(lessons.map(x=>x.id));let added=0;
   for(const L of arr){if(L&&L.raw&&L.id&&!have.has(L.id)){lessons.push(L);added++}}
@@ -565,14 +690,13 @@ $('#clearkey').onclick=()=>{store.set('apikey','');aiStatus()};
 async function callClaude(msgs,{signal,onText,maxTokens=400}={}){
   const res=await fetch(API,{method:'POST',signal,headers:{'content-type':'application/json','x-api-key':key(),'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
     body:JSON.stringify({model:model(),max_tokens:maxTokens,stream:!!onText,messages:msgs})});
-  if(!res.ok){const t=await res.text();const e={code:res.status===401?'not_granted':res.status===429?'rate_limited':'upstream_error',message:t};throw e}
+  if(!res.ok){const t=await res.text();throw {code:res.status===401?'not_granted':res.status===429?'rate_limited':'upstream_error',message:t}}
   if(!onText){const j=await res.json();return {text:(j.content||[]).map(c=>c.text||'').join(''),truncated:j.stop_reason==='max_tokens'}}
   const reader=res.body.getReader();const dec=new TextDecoder();let buf='',text='';
   while(true){const {value,done}=await reader.read();if(done)break;buf+=dec.decode(value,{stream:true});const lines=buf.split('\n');buf=lines.pop();
     for(const l of lines){if(!l.startsWith('data:'))continue;try{const ev=JSON.parse(l.slice(5));if(ev.type==='content_block_delta'&&ev.delta&&ev.delta.text){text+=ev.delta.text;onText({text,delta:ev.delta.text})}}catch(e){}}}
   return {text,truncated:false};
 }
-// same shape as the claude.ai page used: sample(input,opts) and sample.json(input,opts)
 function toMsgs(input){const arr=typeof input==='string'?[{role:'user',content:input}]:input;const m=[];for(const t of arr){if(m.length&&m[m.length-1].role===t.role)m[m.length-1].content+='\n\n'+t.content;else m.push({role:t.role,content:t.content})}return m}
 async function realSample(input,opts={}){try{return await callClaude(toMsgs(input),opts)}catch(e){if(e.name==='AbortError')throw {code:'cancelled',message:''};throw e.code?e:{code:'upstream_error',message:String(e)}}}
 realSample.json=async(input,opts={})=>{const {text}=await realSample(input,{...opts,maxTokens:600});const m=text.match(/\{[\s\S]*\}|\[[\s\S]*\]/);if(!m)throw {code:'invalid_json',message:'',text};return JSON.parse(m[0])};
