@@ -1,0 +1,583 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sub Study</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: narrow study column; sticky tab bar; dialogue set in serif like a script, tools in sans. */
+:root{
+  --bg:#f6f7f9; --panel:#ffffff; --fg:#1b2430; --muted:#5d6b7c; --line:#d9dee6;
+  --accent:#0f6e6a; --accent-fg:#ffffff; --accent-soft:#dff1ef;
+  --ok:#2a7d3f; --bad:#b4453a; --a:#0f6e6a; --b:#8a4b1e;
+  --sans:"IBM Plex Sans",system-ui,sans-serif; --serif:"Source Serif 4",Georgia,serif; --mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#141a21; --panel:#1c2430; --fg:#e8edf3; --muted:#9aa8b8; --line:#2d3845;
+  --accent:#4fc1b9; --accent-fg:#0d1a19; --accent-soft:#1f3a38; --ok:#6fcf86; --bad:#f08b80; --a:#4fc1b9; --b:#e3a06b; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#141a21; --panel:#1c2430; --fg:#e8edf3; --muted:#9aa8b8; --line:#2d3845;
+  --accent:#4fc1b9; --accent-fg:#0d1a19; --accent-soft:#1f3a38; --ok:#6fcf86; --bad:#f08b80; --a:#4fc1b9; --b:#e3a06b; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--sans);font-size:15px;line-height:1.5;margin:0}
+.wrap{max-width:820px;margin:0 auto;padding-block:20px 60px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1{font-family:var(--serif);font-weight:600;font-size:30px;margin:0 0 4px;letter-spacing:-.01em}
+.sub{color:var(--muted);margin:0 0 20px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px}
+label{display:block;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:6px;font-weight:500}
+input[type=text],textarea{width:100%;font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:9px 11px}
+textarea{min-height:150px;font-family:var(--mono);font-size:13px;resize:vertical}
+input:focus,textarea:focus,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.row{display:flex;gap:12px;flex-wrap:wrap}
+.row>*{flex:1 1 200px;min-width:0}
+.field{margin-bottom:12px}
+button{font:inherit;cursor:pointer;border-radius:6px;border:1px solid var(--line);background:var(--panel);color:var(--fg);padding:8px 14px}
+button.primary{background:var(--accent);color:var(--accent-fg);border-color:var(--accent);font-weight:600}
+button.small{padding:4px 10px;font-size:13px}
+.hint{font-size:13px;color:var(--muted);margin-top:8px}
+details summary{cursor:pointer;color:var(--accent);font-size:13px}
+.tabs{position:sticky;top:env(safe-area-inset-top,0px);background:var(--bg);display:flex;gap:4px;padding:12px 0 8px;margin-top:18px;border-bottom:1px solid var(--line);overflow-x:auto;z-index:5}
+.tabs button{white-space:nowrap;border:none;background:transparent;color:var(--muted);padding:6px 12px;border-radius:999px}
+.tabs button[aria-selected=true]{background:var(--accent-soft);color:var(--accent);font-weight:600}
+section.view{padding-top:18px}
+.stats{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin-bottom:14px}
+.stats b{color:var(--fg);font-variant-numeric:tabular-nums}
+.turn{display:grid;grid-template-columns:52px 1fr;gap:10px;padding:8px 0;border-bottom:1px dashed var(--line)}
+.turn .t{font-family:var(--mono);font-size:12px;color:var(--muted);padding-top:5px;font-variant-numeric:tabular-nums}
+.turn .t a{color:inherit;text-decoration:none;border-bottom:1px dotted}
+.turn .who{font-weight:600;font-size:13px;letter-spacing:.02em}
+.turn.a .who{color:var(--a)} .turn.b .who{color:var(--b)}
+.turn p{margin:2px 0 0;font-family:var(--serif);font-size:17px;line-height:1.55}
+.turn .vi{font-size:13.5px;color:var(--muted);margin-top:4px}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center}
+.vocab{display:grid;gap:8px}
+.vword{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:start;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--panel)}
+.vword .w{font-family:var(--serif);font-size:17px;font-weight:600}
+.vword .w small{font-family:var(--mono);font-weight:400;font-size:11px;color:var(--muted);margin-left:6px}
+.vword .ctx{font-size:14px;color:var(--muted);font-style:italic}
+.vword .ctx mark{background:var(--accent-soft);color:var(--fg);font-style:normal;padding:0 2px;border-radius:3px}
+.vword.known{opacity:.45}
+.cloze p{font-family:var(--serif);font-size:17px;margin:0 0 14px;line-height:1.9}
+.cloze .who{font-family:var(--sans);font-weight:600;font-size:13px;margin-right:6px}
+.cloze.a .who{color:var(--a)}.cloze.b .who{color:var(--b)}
+.cloze input{font:inherit;font-family:var(--sans);font-size:14px;width:7.5em;padding:2px 6px;border:none;border-bottom:2px solid var(--line);background:transparent;color:var(--fg);text-align:center;border-radius:0}
+.cloze input.ok{border-color:var(--ok);color:var(--ok)}
+.cloze input.bad{border-color:var(--bad);color:var(--bad)}
+.score{font-weight:600;margin-left:8px}
+.shadow{display:grid;gap:10px}
+.sline{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:center;padding:12px 14px;border:1px solid var(--line);border-radius:8px;background:var(--panel)}
+.sline .t a{font-family:var(--mono);font-size:13px;color:var(--accent);text-decoration:none;font-variant-numeric:tabular-nums}
+.sline p{margin:0;font-family:var(--serif);font-size:18px}
+.sline .reps{display:flex;gap:4px;margin-top:6px}
+.sline .reps button{width:28px;height:28px;padding:0;border-radius:50%;font-size:12px}
+.sline .reps button.done{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.empty{color:var(--muted);text-align:center;padding:30px 0}
+.pill{display:inline-block;font-size:11px;padding:2px 8px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-weight:600;letter-spacing:.03em;text-transform:uppercase}
+.libhead{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+.card{text-align:left;display:grid;gap:4px;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--panel);cursor:pointer;position:relative}
+.card:hover{border-color:var(--accent)}
+.card.active{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+.card .ct{font-family:var(--serif);font-weight:600;font-size:16px;line-height:1.3;text-wrap:balance}
+.card .cm{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.card .del{position:absolute;top:8px;right:8px;padding:2px 8px;font-size:12px;color:var(--muted);border:none;background:transparent}
+.card .del:hover{color:var(--bad)}
+.ltitle{font-family:var(--serif);font-weight:600;font-size:22px;margin:24px 0 0;text-wrap:balance}
+details.panel>summary{font-weight:500;color:var(--fg);font-size:14px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden}
+.seg button{border:none;border-radius:0;background:transparent;color:var(--muted)}
+.seg button[aria-pressed=true]{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.sc{display:grid;grid-template-columns:52px 1fr;gap:10px;padding:10px 0;border-bottom:1px dashed var(--line)}
+.sc .who{font-weight:600;font-size:13px;padding-top:4px}
+.sc.a .who{color:var(--a)}.sc.b .who{color:var(--b)}
+.sc p{margin:0;font-family:var(--serif);font-size:17px;line-height:1.55}
+.sc.mine{background:var(--accent-soft);border-radius:8px;padding:10px 12px;border-bottom:none;margin:4px 0}
+.sc.mine textarea{min-height:48px;font-family:var(--serif);font-size:16px;background:var(--panel)}
+.sc .ans{margin-top:8px;font-family:var(--serif);font-size:16px}
+.sc .ans .sim{font-family:var(--sans);font-size:12px;font-weight:600;margin-left:8px;padding:2px 8px;border-radius:999px;background:var(--panel)}
+.sc .ans mark{background:transparent;color:var(--bad);text-decoration:underline dotted}
+.sc .act{display:flex;gap:6px;margin-top:8px}
+.chat{display:grid;gap:10px;min-height:120px;margin-bottom:12px}
+.bub{max-width:85%;padding:10px 14px;border-radius:14px;font-family:var(--serif);font-size:16px;line-height:1.5;white-space:pre-wrap}
+.bub.ai{background:var(--panel);border:1px solid var(--line);justify-self:start;border-bottom-left-radius:4px}
+.bub.me{background:var(--accent-soft);justify-self:end;border-bottom-right-radius:4px}
+.bub .nm{display:block;font-family:var(--sans);font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin-bottom:3px}
+.bub .fix{display:block;font-family:var(--sans);font-size:13px;color:var(--muted);margin-top:6px;border-top:1px dashed var(--line);padding-top:6px}
+.chatbar{display:flex;gap:8px;flex-wrap:wrap}
+.mic{font-size:16px;padding:6px 10px}
+.mic.on{background:var(--bad);color:#fff;border-color:var(--bad)}
+@media (prefers-reduced-motion:no-preference){.mic.on{animation:pulse 1s infinite}}
+@keyframes pulse{50%{opacity:.6}}
+.chatbar input{flex:1 1 200px}
+@media (max-width:480px){.sc{grid-template-columns:1fr}.turn{grid-template-columns:1fr}.turn .t{padding-top:0}.vword{grid-template-columns:1fr auto}.vword .ctx{grid-column:1/-1}}
+@media (prefers-reduced-motion:no-preference){.vword,.sline{transition:opacity .2s}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Sub Study</h1>
+  <p class="sub">Chọn một bài trong thư viện rồi học theo 5 bước: đọc, từ vựng, điền từ, shadowing, nhập vai.</p>
+
+  <details class="panel" id="aipanel" style="margin-bottom:14px">
+    <summary id="aistatus">Kết nối AI (chưa có khoá API)</summary>
+    <div class="row" style="margin-top:12px">
+      <div class="field"><label for="apikey">Khoá API Anthropic (lưu trong trình duyệt này)</label><input id="apikey" type="password" placeholder="sk-ant-…" autocomplete="off"></div>
+      <div class="field"><label for="model">Model</label><input id="model" type="text" value="claude-haiku-5-5"></div>
+    </div>
+    <div class="toolbar"><button class="primary small" id="savekey">Lưu</button><button class="small" id="clearkey">Xoá khoá</button><span class="hint" style="margin:0">Lấy khoá tại console.anthropic.com. Không chia sẻ file này khi đã lưu khoá trong trình duyệt khác, khoá chỉ nằm ở máy bạn.</span></div>
+  </details>
+
+  <div class="lib">
+    <div class="libhead"><label style="margin:0">Thư viện bài học</label><span style="display:flex;gap:8px;align-items:center"><span class="hint" id="libcount" style="margin:0"></span><button class="small" id="export">Xuất JSON</button><label class="small" style="margin:0;text-transform:none;letter-spacing:0;font-size:13px;cursor:pointer;border:1px solid var(--line);border-radius:6px;padding:4px 10px;color:var(--fg)">Nhập JSON<input id="import" type="file" accept="application/json" hidden></label></span></div>
+    <div class="cards" id="cards"><p class="empty" id="libempty">Đang tải thư viện…</p></div>
+  </div>
+
+  <details class="panel" id="addpanel" style="margin-top:14px">
+    <summary id="addtitle">Dán bài của riêng bạn</summary>
+    <div class="field" style="margin-top:12px"><label for="title">Tên bài</label><input id="title" type="text" placeholder="Ví dụ: 6 Minute English – Jet lag"></div>
+    <div class="row">
+      <div class="field"><label for="url">Link YouTube (để tua theo mốc giờ)</label><input id="url" type="text" placeholder="https://www.youtube.com/watch?v=..."></div>
+      <div class="field"><label for="names">Tên 2 người nói</label><input id="names" type="text" value="Neil, Beth"></div>
+    </div>
+    <div class="field">
+      <label for="raw">Phụ đề</label>
+      <textarea id="raw" placeholder="0:03  Hello and welcome...&#10;0:07  Today we're talking about..."></textarea>
+      <div class="hint">Nhận cả 3 kiểu: bản copy từ nút <em>Show transcript</em> dưới video YouTube (<code>0:03 text</code>), file .srt/.vtt, hoặc file từ tool Python (<code>[00:03] A: text</code>).
+        <details><summary>Cách lấy transcript trên YouTube</summary>Dưới video → nút <b>…</b> (hoặc phần mô tả) → <b>Show transcript</b> → bôi đen toàn bộ cột bên phải → copy → dán vào đây.</details>
+      </div>
+    </div>
+    <div class="toolbar">
+      <button class="primary" id="go">Xem thử</button>
+      <button class="primary" id="save" hidden>Lưu vào thư viện</button>
+      <button id="sample">Dùng bài mẫu</button>
+      <span class="hint" style="margin:0">Ngưỡng đổi người: <input id="gap" type="text" value="1.0" style="width:4em;padding:3px 6px"> giây</span>
+    </div>
+    <p class="hint" id="savenote"></p>
+  </details>
+
+  <div id="lesson" hidden>
+    <h2 class="ltitle" id="ltitle"></h2>
+    <div class="tabs" role="tablist">
+      <button role="tab" aria-selected="true" data-v="read">1 · Đọc</button>
+      <button role="tab" data-v="vocab">2 · Từ vựng</button>
+      <button role="tab" data-v="cloze">3 · Điền từ</button>
+      <button role="tab" data-v="shadow">4 · Shadowing</button>
+      <button role="tab" data-v="role">5 · Nhập vai</button>
+    </div>
+    <div class="stats" id="stats"></div>
+
+    <section class="view" id="v-read">
+      <div class="toolbar"><span class="hint" style="margin:0">Nghe lần 1 không nhìn chữ. Lần 2 vừa nghe vừa đọc. Bấm mốc giờ để mở video đúng đoạn.</span></div>
+      <div id="turns"></div>
+    </section>
+
+    <section class="view" id="v-vocab" hidden>
+      <div class="toolbar">
+        <span class="hint" style="margin:0">Từ không nằm trong ~300 từ thông dụng. Bấm <b>Đã biết</b> để ẩn khỏi các bài sau (lưu trên máy bạn).</span>
+        <button class="small" id="copyvocab">Copy cho Anki</button>
+        <button class="small" id="resetknown">Xoá danh sách đã biết</button>
+      </div>
+      <div class="vocab" id="vocab"></div>
+    </section>
+
+    <section class="view" id="v-cloze" hidden>
+      <div class="toolbar">
+        <button class="primary small" id="check">Chấm</button>
+        <button class="small" id="reveal">Hiện đáp án</button>
+        <button class="small" id="reshuffle">Đổi chỗ trống</button>
+        <span class="score" id="score"></span>
+      </div>
+      <div id="cloze"></div>
+    </section>
+
+    <section class="view" id="v-shadow" hidden>
+      <div class="toolbar"><span class="hint" style="margin:0">Mở video ở mốc giờ, nghe 1 câu, dừng, nhại y hệt ngữ điệu. Đánh dấu mỗi lần lặp, mục tiêu 3 lần/câu.</span></div>
+      <div class="shadow" id="shadow"></div>
+    </section>
+
+    <section class="view" id="v-role" hidden>
+      <div class="toolbar">
+        <span class="hint" style="margin:0">Vai của bạn:</span>
+        <span class="seg" id="pickrole"><button class="small" data-r="0" aria-pressed="true">A</button><button class="small" data-r="1" aria-pressed="false">B</button></span>
+        <label class="chk" style="margin:0;text-transform:none;letter-spacing:0;font-size:13px;display:inline-flex;gap:6px;align-items:center"><input type="checkbox" id="speak" checked> AI đọc to lời</label>
+        <span class="seg" id="pickmode"><button class="small" data-m="script" aria-pressed="true">Theo kịch bản</button><button class="small" data-m="guided" aria-pressed="false">Kịch bản + AI</button><button class="small" data-m="free" aria-pressed="false">Tự do với AI</button></span>
+      </div>
+
+      <div id="role-script">
+        <p class="hint" style="margin:0 0 12px">Máy "nói" lời của vai kia. Đến lượt bạn, hãy nói thành tiếng (hoặc gõ) rồi bấm <b>So sánh</b>. Mục tiêu không phải nhớ y hệt, mà là nói được ý đó bằng tiếng Anh tự nhiên.</p>
+        <div id="script"></div>
+      </div>
+
+      <div id="role-guided" hidden>
+        <p class="hint" style="margin:0 0 12px">AI nói đúng lời vai kia trong video. Đến lượt bạn, nói ý của câu gốc theo cách của bạn; AI chấm, gợi ý cách nói hay hơn, rồi tiếp tục cảnh.</p>
+        <div class="chat" id="gchat"></div>
+        <form class="chatbar" id="gform">
+          <input id="gin" type="text" placeholder="Lượt của bạn… (Enter để gửi)" autocomplete="off">
+          <button type="button" class="mic" data-mic="gin" aria-label="Nói">🎤</button>
+          <button class="primary" type="submit" id="gsend">Gửi</button>
+          <button type="button" class="small" id="ghint">Gợi ý</button>
+          <button type="button" class="small" id="greset">Bắt đầu lại</button>
+        </form>
+        <p class="hint" id="gnote"></p>
+      </div>
+
+      <div id="role-free" hidden>
+        <p class="hint" style="margin:0 0 12px">Claude đóng vai kia và ứng biến theo chủ đề bài học, dùng từ vựng trong bài. Sau mỗi câu, Claude sửa nhẹ 1 lỗi của bạn trong ngoặc vuông.</p>
+        <div class="chat" id="chat"></div>
+        <form class="chatbar" id="chatform">
+          <input id="chatin" type="text" placeholder="Nói hoặc gõ câu trả lời bằng tiếng Anh…" autocomplete="off">
+          <button type="button" class="mic" data-mic="chatin" aria-label="Nói">🎤</button>
+          <button class="primary" type="submit" id="chatsend">Gửi</button>
+          <button type="button" class="small" id="chatstop" hidden>Dừng</button>
+          <button type="button" class="small" id="chatreset">Bắt đầu lại</button>
+        </form>
+        <p class="hint" id="chatnote"></p>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script>
+(function(){
+const $=s=>document.querySelector(s);
+const COMMON=new Set(`a about above after again against all also am an and any are as at be because been before being below between both but by can could did do does doing down during each few for from further had has have having he her here hers herself him himself his how i if in into is it its itself just let me more most my myself no nor not now of off on once only or other our ours ourselves out over own same she should so some such than that the their theirs them themselves then there these they this those through to too under until up very was we were what when where which while who whom why will with would you your yours yourself yourselves yes well really like get got go going went come came know think thing things say said see saw want one two three people time way day make made take took good new first last long great little right big old much many lot kind back even still ever never always sometimes often maybe actually quite pretty bit something anything nothing everything someone anyone everyone hello hi okay ok thanks thank welcome today talk talking talked question questions answer answers word words phrase phrases vocabulary programme program learning english bbc listen listening speak speaking mean means meaning example called use used using ask asked tell told look looked find found need needed i'm i've it's that's don't didn't we're you're they're he's she's there's can't isn't aren't wasn't doesn't let's gonna wanna yeah yep nope hmm`.split(/\s+/));
+
+// ---- storage (per-viewer convenience) ----
+const store={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+let known=new Set(store.get('known',[]));
+
+// ---- parsing ----
+function toSec(t){const p=t.replace(',','.').split(':').map(Number);return p.length===3?p[0]*3600+p[1]*60+p[2]:p.length===2?p[0]*60+p[1]:p[0]}
+function parse(raw){
+  const lines=raw.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
+  const segs=[];
+  // SRT / VTT
+  if(/-->/.test(raw)){
+    let cur=null;
+    for(const l of lines){
+      const m=l.match(/(\d+:\d+:\d+[.,]\d+|\d+:\d+[.,]\d+)\s*-->\s*(\d+:\d+:\d+[.,]\d+|\d+:\d+[.,]\d+)/);
+      if(m){cur={start:toSec(m[1]),end:toSec(m[2]),text:''};segs.push(cur);continue}
+      if(/^\d+$/.test(l)||/^WEBVTT/.test(l)||!cur)continue;
+      cur.text+=(cur.text?' ':'')+l.replace(/<[^>]+>/g,'');
+    }
+  }else{
+    // "[00:03] A: text" | "(00:03) text" | "0:03 text" | "0:03\ntext"
+    let pending=null,started=false;
+    for(const l of lines){
+      let m=l.match(/^[\[(]?(\d+:\d+(?::\d+)?(?:[.,]\d+)?)[\])]?\s*(.*)$/);
+      if(!m&&!started)continue; // skip URL / "Transcript:" lines before the first timestamp
+      started=true;
+      if(m){
+        const start=toSec(m[1]);let text=m[2].trim();
+        let who=null;const w=text.match(/^([A-Za-z][\w .'-]{0,20}):\s+(.*)$/);if(w){who=w[1];text=w[2]}
+        if(text){segs.push({start,text,who})}else{pending={start,who}}
+      }else if(pending){segs.push({start:pending.start,text:l,who:pending.who});pending=null}
+      else if(segs.length){segs[segs.length-1].text+=' '+l}
+    }
+  }
+  for(let i=0;i<segs.length;i++){
+    segs[i].text=segs[i].text.replace(/\s+/g,' ').trim();
+    if(segs[i].end==null)segs[i].end=i+1<segs.length?segs[i+1].start:segs[i].start+3;
+  }
+  // a block holding several sentences (transcript copied as paragraphs) is split into one segment per sentence,
+  // with times spread across the block in proportion to sentence length
+  const out=[];
+  for(const s of segs){
+    const sents=s.text.split(/(?<=[.?!…])\s+(?=["'(A-Z])/).filter(Boolean);
+    if(sents.length<2){out.push(s);continue}
+    const total=sents.reduce((n,x)=>n+x.length,0),span=Math.max(s.end-s.start,sents.length*2);let t=s.start;
+    for(const x of sents){const d=span*x.length/total;out.push({start:t,end:t+d,text:x,who:s.who});t+=d}
+  }
+  return out.filter(s=>s.text&&!/^\[.*\]$/.test(s.text));
+}
+
+// ---- dialogue turns ----
+function toTurns(segs,gap){
+  const turns=[];let spk=0;
+  segs.forEach((s,i)=>{
+    if(s.who){ // explicit speaker from python tool
+      const last=turns[turns.length-1];
+      if(last&&last.name===s.who){last.text+=' '+s.text;return}
+      const idx=turns.length&&last.name!==s.who?1-(last.spk):0;
+      turns.push({spk:idx,name:s.who,start:s.start,text:s.text});return}
+    if(i===0){turns.push({spk,start:s.start,text:s.text});return}
+    const prev=segs[i-1];
+    if(s.start-prev.end>=gap||/\?\s*$/.test(prev.text)){spk=1-spk;turns.push({spk,start:s.start,text:s.text})}
+    else turns[turns.length-1].text+=' '+s.text;
+  });
+  return turns;
+}
+const fmt=s=>{s=Math.floor(s);const m=Math.floor(s/60),x=s%60;return `${String(m).padStart(2,'0')}:${String(x).padStart(2,'0')}`};
+function ytAt(sec){const u=$('#url').value.trim();const m=u.match(/(?:v=|youtu\.be\/|shorts\/|embed\/)([A-Za-z0-9_-]{11})/);return m?`https://www.youtube.com/watch?v=${m[1]}&t=${Math.max(0,Math.floor(sec)-1)}s`:null}
+
+// ---- vocab ----
+function vocab(turns){
+  const cnt=new Map();
+  for(const t of turns)for(const w of (t.text.toLowerCase().match(/[a-z][a-z'-]{3,}/g)||[])){if(COMMON.has(w)||/^\d/.test(w))continue;cnt.set(w,(cnt.get(w)||0)+1)}
+  return [...cnt.entries()].sort((a,b)=>(Math.min(b[1],3)-Math.min(a[1],3))||(b[0].length-a[0].length)).slice(0,30)
+    .map(([w,c])=>{const t=turns.find(t=>new RegExp('\\b'+w+'\\b','i').test(t.text));const m=t&&t.text.match(new RegExp('[^.?!]*\\b'+w+'\\b[^.?!]*[.?!]?','i'));return {w,c,ctx:(m?m[0]:t?t.text:'').trim().slice(0,160)}});
+}
+
+// ---- state ----
+let turns=[],vb=[],clozeAns=[],seed=0,names=['A','B'];
+function esc(s){return s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+
+let current={title:'',url:''};
+function formLesson(){
+  let url=$('#url').value.trim();
+  if(!url){const m=$('#raw').value.match(/https?:\/\/(?:www\.)?(?:youtube\.com\/watch\?[^\s]*v=|youtu\.be\/)[A-Za-z0-9_-]{11}/);if(m){url=m[0];$('#url').value=url}}
+  return {title:$('#title').value.trim(),url,names:$('#names').value,raw:$('#raw').value,gap:parseFloat($('#gap').value)||1}}
+function build(){buildFrom(formLesson())}
+function buildFrom(L){
+  current=L;$('#url').value=L.url||'';
+  const gap=+L.gap||1;
+  names=(L.names||'').split(',').map(s=>s.trim()).filter(Boolean);if(names.length<2)names=['A','B'];
+  $('#ltitle').textContent=L.title||'Bài chưa đặt tên';
+  const segs=parse(L.raw||'');
+  if(!segs.length){$('#lesson').hidden=false;$('#turns').innerHTML='<p class="empty">Không đọc được phụ đề. Kiểm tra lại định dạng (mỗi dòng cần có mốc giờ).</p>';return}
+  turns=toTurns(segs,gap);turns.forEach(t=>{t.name=t.name||names[t.spk]});
+  vb=vocab(turns);
+  $('#lesson').hidden=false;
+  const words=turns.reduce((n,t)=>n+t.text.split(/\s+/).length,0);
+  $('#stats').innerHTML=`<span>Độ dài <b>${fmt(segs[segs.length-1].end)}</b></span><span>Lượt nói <b>${turns.length}</b></span><span>Số từ <b>${words}</b></span><span>Từ mới <b>${vb.filter(v=>!known.has(v.w)).length}</b></span>`;
+  renderRead();renderVocab();renderCloze();renderShadow();renderScript();resetChat();showView('read');
+}
+
+// ---- 5. role-play ----
+let myRole=0,mode='script',sample=null,chatTurns=[],chatCtl=null;
+const norm=s=>s.toLowerCase().replace(/[^a-z' ]/g,' ').split(/\s+/).filter(Boolean);
+function similarity(a,b){const A=norm(a),B=new Set(norm(b));if(!A.length||!B.size)return 0;const hit=A.filter(w=>B.has(w)).length;return Math.round(100*hit/Math.max(A.length,B.size))}
+function renderScript(){
+  const pr=$('#pickrole');pr.children[0].textContent=names[0];pr.children[1].textContent=names[1];
+  [...pr.children].forEach(b=>b.setAttribute('aria-pressed',+b.dataset.r===myRole));
+  $('#script').innerHTML=turns.map((t,i)=>t.spk===myRole
+    ?`<div class="sc mine ${t.spk?'b':'a'}" data-i="${i}"><div class="who">${esc(t.name)} (bạn)</div><div><textarea id="say${i}" placeholder="Bạn sẽ nói gì ở đây?"></textarea><div class="act"><button class="small" data-cmp>So sánh</button><button class="small" data-show>Hiện lời gốc</button></div><div class="ans" hidden></div></div></div>`
+    :`<div class="sc ${t.spk?'b':'a'}"><div class="who">${esc(t.name)}</div><p>${esc(t.text)}</p></div>`).join('');
+}
+$('#pickrole').onclick=e=>{const b=e.target.closest('button');if(!b)return;myRole=+b.dataset.r;renderScript();resetChat()};
+$('#pickmode').onclick=e=>{const b=e.target.closest('button');if(!b)return;mode=b.dataset.m;[...e.currentTarget.children].forEach(x=>x.setAttribute('aria-pressed',x===b));$('#role-script').hidden=mode!=='script';$('#role-guided').hidden=mode!=='guided';$('#role-free').hidden=mode!=='free';if(mode==='guided'&&!$('#gchat').children.length)gReset();if(mode==='free'&&!chatTurns.length)startChat()};
+$('#script').onclick=e=>{const b=e.target.closest('button');if(!b)return;const box=b.closest('.sc');const t=turns[+box.dataset.i];const ans=box.querySelector('.ans');
+  if(b.hasAttribute('data-show')){ans.hidden=false;ans.innerHTML=esc(t.text);return}
+  const mine=box.querySelector('textarea').value;const s=similarity(mine,t.text);const B=new Set(norm(mine));
+  ans.hidden=false;ans.innerHTML=t.text.split(/(\s+)/).map(w=>/\s/.test(w)||B.has(w.toLowerCase().replace(/[^a-z']/g,''))?esc(w):`<mark>${esc(w)}</mark>`).join('')+`<span class="sim">${s}% trùng ý</span>`};
+
+function rules(){
+  const ai=names[1-myRole],me=names[myRole];
+  const vocabList=vb.filter(v=>!known.has(v.w)).slice(0,12).map(v=>v.w).join(', ');
+  const script=turns.slice(0,8).map(t=>`${t.name}: ${t.text}`).join('\n');
+  return `You are ${ai} in a spoken English practice role-play. The learner plays ${me}. The learner is Vietnamese, intermediate level.
+Context: the conversation below is the scene we are practising. Do not repeat it; improvise naturally in the same situation and tone.
+${script}
+
+Rules:
+- Stay in character as ${ai}. Reply in 1-3 short, natural spoken sentences. Always end with a question or a hook so the learner has something to answer.
+- Try to use these words from the lesson when natural: ${vocabList||'(none)'}.
+- If the learner's last message has a clear grammar or word-choice mistake, add ONE short correction at the end on a new line starting with "[Sửa] ", written in Vietnamese, showing the better English phrase. If it is fine, add "[Tốt] " plus 3-5 words of praise in Vietnamese. Never more than one bracketed note.
+- Never explain the rules, never say you are an AI, never switch to Vietnamese except inside the bracketed note.
+- First message: open the scene as ${ai} in one or two sentences.`;
+}
+function fill(d,name,text){const m=text.match(/\n?\[(Sửa|Tốt)\]\s*(.*)$/s);const body=m?text.slice(0,m.index).trim():text;d.innerHTML=`<span class="nm">${esc(name)}</span>${esc(body)}${m?`<span class="fix">${(m[1]==='Sửa'?'✎ ':'✓ ')+esc(m[2])}</span>`:''}`}
+function bubble(cls,name,text){const d=document.createElement('div');d.className='bub '+cls;fill(d,name,text);$('#chat').appendChild(d);d.scrollIntoView({block:'nearest'});return d}
+async function ask(){
+  if(!sample){$('#chatnote').textContent='Chưa có khoá API: mở "Kết nối AI" ở đầu trang và dán khoá vào.';return}
+  const ai=names[1-myRole];const d=bubble('ai',ai,'Đang nghĩ…');chatCtl=new AbortController();$('#chatsend').disabled=true;$('#chatstop').hidden=false;$('#chatnote').textContent='';
+  try{
+    const {text}=await sample([{role:'user',content:rules()},...chatTurns],{cache:false,modelTier:'quick',signal:chatCtl.signal,onText:({text})=>fill(d,ai,text)});
+    chatTurns.push({role:'assistant',content:text});say(text);
+  }catch(e){
+    if(e.code==='cancelled'){if(!e.text)d.remove()}
+    else if(e.code==='not_granted'||e.code==='sampling_disabled'){d.remove();sample=null;$('#chatnote').textContent='Khoá API bị từ chối. Kiểm tra lại khoá trong "Kết nối AI".'}
+    else if(e.code==='rate_limited'){d.remove();$('#chatnote').textContent='Hết lượt tạm thời. Chờ một lúc rồi gửi lại.'}
+    else{d.remove();$('#chatnote').textContent='Có lỗi khi hỏi Claude. Thử gửi lại.'}
+  }finally{$('#chatsend').disabled=false;$('#chatstop').hidden=true;chatCtl=null}
+}
+// ---- guided: AI follows the script, grades the learner's turn ----
+let gIdx=0,gBusy=false;
+function gBubble(cls,name,text){const d=document.createElement('div');d.className='bub '+cls;d.innerHTML=`<span class="nm">${esc(name)}</span>${esc(text)}`;$('#gchat').appendChild(d);d.scrollIntoView({block:'nearest'});return d}
+function gPlayAI(){ // show the other role's lines until it's the learner's turn
+  const spoken=[];
+  while(gIdx<turns.length&&turns[gIdx].spk!==myRole){gBubble('ai',turns[gIdx].name,turns[gIdx].text);spoken.push(turns[gIdx].text);gIdx++}
+  if(spoken.length)say(spoken.join(' '));
+  if(gIdx>=turns.length){$('#gnote').textContent='Hết cảnh. Bấm "Bắt đầu lại" để luyện lần nữa, hoặc đổi vai.';$('#gin').disabled=true;$('#gsend').disabled=true}
+  else{$('#gin').disabled=false;$('#gsend').disabled=false;$('#gin').placeholder=`Lượt của ${names[myRole]}… (gợi ý: ${turns[gIdx].text.split(/\s+/).length} từ)`;$('#gin').focus()}
+}
+function gReset(){gIdx=0;$('#gchat').innerHTML='';$('#gnote').textContent='';if(mode==='guided'&&turns.length)gPlayAI()}
+async function gGrade(mine){
+  const t=turns[gIdx];const prevAI=gIdx>0?turns[gIdx-1].text:'';
+  gBubble('me',names[myRole],mine);
+  const fb=document.createElement('div');fb.className='bub ai';fb.innerHTML=`<span class="nm">Chấm</span>Đang chấm…`;$('#gchat').appendChild(fb);
+  let note;
+  if(sample){
+    try{
+      const r=await sample.json(`You grade one line in a spoken English role-play. The learner is Vietnamese, intermediate.
+Previous line by the other speaker: "${prevAI}"
+Original line in the script (what the learner was meant to say): "${t.text}"
+Learner's attempt: "${mine}"
+Reply with only JSON: {"score": 0-10, "ok": true|false, "note": "<one or two short sentences in Vietnamese: what was good, and the one most useful fix, with the corrected English phrase in quotes>", "better": "<a natural English version of the learner's attempt, keeping their idea; empty if already natural>"}
+Judge meaning and naturalness, not word-for-word match. Score 8+ means the idea is conveyed naturally.`,{modelTier:'quick'});
+      const sc=Math.max(0,Math.min(10,Math.round(+r.score||0)));const stars=Math.floor(sc/2);
+      note='★'.repeat(stars)+'☆'.repeat(5-stars)+' '+sc+'/10 — '+(r.note||'')+(r.better?'\n→ '+r.better:'')+'\nCâu gốc: '+t.text;
+    }catch(e){
+      if(e.code==='not_granted'||e.code==='sampling_disabled'){sample=null;$('#gnote').textContent='Khoá API bị từ chối; chấm tự động theo từ.'}
+      else if(e.code==='rate_limited'){$('#gnote').textContent='Hết lượt hỏi Claude tạm thời; chấm tự động cho câu này.'}
+      note=null;
+    }
+  }
+  if(note==null){const s=similarity(mine,t.text);note=`${s}% trùng ý (chấm tự động theo từ).\nCâu gốc: ${t.text}`}
+  fb.innerHTML=`<span class="nm">Chấm</span>${esc(note)}`;fb.scrollIntoView({block:'nearest'});
+  gIdx++;gPlayAI();
+}
+$('#gform').onsubmit=e=>{e.preventDefault();const v=$('#gin').value.trim();if(!v||gBusy||gIdx>=turns.length)return;$('#gin').value='';gBusy=true;$('#gsend').disabled=true;gGrade(v).finally(()=>{gBusy=false})};
+$('#ghint').onclick=()=>{if(gIdx<turns.length){const w=turns[gIdx].text.split(/\s+/);$('#gnote').textContent='Gợi ý: '+w.slice(0,Math.ceil(w.length/3)).join(' ')+' …'}};
+$('#greset').onclick=gReset;
+
+function resetChat(){chatTurns=[];$('#chat').innerHTML='';$('#chatnote').textContent='';gReset();if(mode==='free')startChat()}
+function startChat(){chatTurns=[{role:'user',content:'(Start the scene.)'}];ask()}
+$('#chatform').onsubmit=e=>{e.preventDefault();const v=$('#chatin').value.trim();if(!v||chatCtl)return;$('#chatin').value='';bubble('me',names[myRole],v);chatTurns.push({role:'user',content:v});if(chatTurns.length>24)chatTurns.splice(1,2);ask()};
+$('#chatstop').onclick=()=>chatCtl&&chatCtl.abort();
+$('#chatreset').onclick=()=>{if(chatCtl)chatCtl.abort();resetChat()};
+
+// ---- voice: speak AI lines, dictate the learner's lines ----
+function say(text){
+  try{
+    if(!$('#speak').checked||!('speechSynthesis'in window))return;
+    const clean=text.replace(/\n?\[(Sửa|Tốt)\][\s\S]*$/,'').trim();if(!clean)return;
+    speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(clean);u.lang='en-GB';u.rate=0.95;
+    const v=speechSynthesis.getVoices().find(v=>/^en-GB/i.test(v.lang))||speechSynthesis.getVoices().find(v=>/^en/i.test(v.lang));if(v)u.voice=v;
+    speechSynthesis.speak(u);
+  }catch(e){}
+}
+let rec=null,recBtn=null;
+function micHint(where){where.textContent='Trình duyệt này không cho trang nghe micro. Cách khác: bấm vào ô chữ rồi dùng nút micro trên bàn phím điện thoại (Gboard / iPhone), hoặc Win+H trên Windows, double-tap Fn trên Mac để đọc chính tả.'}
+document.addEventListener('click',e=>{
+  const b=e.target.closest('.mic');if(!b)return;
+  const input=document.getElementById(b.dataset.mic);const note=$(b.dataset.mic==='gin'?'#gnote':'#chatnote');
+  if(rec){rec.stop();return}
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){micHint(note);return}
+  try{
+    rec=new SR();rec.lang='en-US';rec.interimResults=true;rec.continuous=false;recBtn=b;b.classList.add('on');speechSynthesis&&speechSynthesis.cancel();
+    const base=input.value?input.value+' ':'';
+    rec.onresult=ev=>{let t='';for(const r of ev.results)t+=r[0].transcript;input.value=base+t};
+    rec.onerror=ev=>{if(ev.error==='not-allowed'||ev.error==='service-not-allowed')micHint(note);else if(ev.error!=='aborted')note.textContent='Không nghe được, thử lại.'};
+    rec.onend=()=>{b.classList.remove('on');rec=null;if(input.value.trim()){input.form&&input.form.requestSubmit()}};
+    rec.start();
+  }catch(e){rec=null;b.classList.remove('on');micHint(note)}
+});
+function renderRead(){
+  $('#turns').innerHTML=turns.map(t=>{const u=ytAt(t.start);return `<div class="turn ${t.spk?'b':'a'}"><div class="t">${u?`<a href="${u}" target="_blank" rel="noopener">${fmt(t.start)}</a>`:fmt(t.start)}</div><div><div class="who">${esc(t.name)}</div><p>${esc(t.text)}</p></div></div>`}).join('');
+}
+function renderVocab(){
+  $('#vocab').innerHTML=vb.map(v=>`<div class="vword ${known.has(v.w)?'known':''}" data-w="${v.w}"><div class="w">${esc(v.w)}<small>×${v.c}</small></div><div class="ctx">${esc(v.ctx).replace(new RegExp('\\b('+v.w+')\\b','i'),'<mark>$1</mark>')}</div><button class="small">${known.has(v.w)?'Chưa biết':'Đã biết'}</button></div>`).join('')||'<p class="empty">Không tìm thấy từ nào ngoài danh sách thông dụng.</p>';
+}
+function renderCloze(){
+  const rnd=mulberry(seed);const pool=vb.filter(v=>!known.has(v.w)).map(v=>v.w);shuffle(pool,rnd);
+  const chosen=new Set();clozeAns=[];
+  $('#cloze').innerHTML=turns.map(t=>{
+    let html='',rest=t.text;
+    // pick at most one blank per turn, up to 12 total
+    for(const w of pool){if(clozeAns.length>=12)break;if(chosen.has(w))continue;const m=rest.match(new RegExp('\\b('+w+')\\b','i'));if(m){const i=clozeAns.push(m[1]);chosen.add(w);html=esc(rest.slice(0,m.index))+`<input data-i="${i-1}" aria-label="chỗ trống ${i}" autocomplete="off">`+esc(rest.slice(m.index+m[1].length));rest=null;break}}
+    if(rest!==null)html=esc(rest);
+    return `<div class="cloze ${t.spk?'b':'a'}"><p><span class="who">${esc(t.name)}</span>${html}</p></div>`}).join('');
+  $('#score').textContent='';
+}
+function renderShadow(){
+  const c=turns.filter(t=>{const n=t.text.split(/\s+/).length;return n>=6&&n<=16}).sort((a,b)=>Math.abs(a.text.split(/\s+/).length-10)-Math.abs(b.text.split(/\s+/).length-10)).slice(0,10).sort((a,b)=>a.start-b.start);
+  $('#shadow').innerHTML=c.map(t=>{const u=ytAt(t.start);return `<div class="sline"><div class="t">${u?`<a href="${u}" target="_blank" rel="noopener">▶ ${fmt(t.start)}</a>`:`<span style="font-family:var(--mono);font-size:13px;color:var(--muted)">${fmt(t.start)}</span>`}</div><div><p>${esc(t.text)}</p><div class="reps"><button aria-label="lần 1">1</button><button aria-label="lần 2">2</button><button aria-label="lần 3">3</button></div></div></div>`}).join('')||'<p class="empty">Chưa có câu nào đủ ngắn để luyện.</p>';
+}
+function showView(v){document.querySelectorAll('.tabs [role=tab]').forEach(b=>b.setAttribute('aria-selected',b.dataset.v===v));document.querySelectorAll('section.view').forEach(s=>s.hidden=s.id!=='v-'+v)}
+function mulberry(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function shuffle(arr,r){for(let i=arr.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]]}}
+
+// ---- events ----
+$('#go').onclick=build;
+$('#sample').onclick=()=>{$('#raw').value=SAMPLE;$('#url').value='';$('#names').value='Mia, Tom';$('#title').value='Bài mẫu: Jet lag';build()};
+document.querySelector('.tabs').onclick=e=>{const b=e.target.closest('[role=tab]');if(b)showView(b.dataset.v)};
+$('#vocab').onclick=e=>{const b=e.target.closest('button');if(!b)return;const w=b.closest('.vword').dataset.w;known.has(w)?known.delete(w):known.add(w);store.set('known',[...known]);renderVocab();renderCloze()};
+$('#resetknown').onclick=()=>{known=new Set();store.set('known',[]);renderVocab();renderCloze()};
+$('#copyvocab').onclick=e=>{const txt=vb.filter(v=>!known.has(v.w)).map(v=>`${v.ctx.replace(new RegExp('\\b'+v.w+'\\b','i'),'____')}\t${v.w}`).join('\n');
+  navigator.clipboard&&navigator.clipboard.writeText(txt).then(()=>{e.target.textContent='Đã copy (câu[tab]từ)';setTimeout(()=>e.target.textContent='Copy cho Anki',2000)}).catch(()=>{const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();e.target.textContent='Bôi đen rồi Ctrl+C';setTimeout(()=>ta.remove(),8000)})};
+$('#check').onclick=()=>{let ok=0;document.querySelectorAll('#cloze input').forEach(i=>{const good=i.value.trim().toLowerCase()===clozeAns[+i.dataset.i].toLowerCase();i.classList.toggle('ok',good);i.classList.toggle('bad',!good&&i.value.trim()!=='');if(good)ok++});$('#score').textContent=`${ok}/${clozeAns.length} đúng`};
+$('#reveal').onclick=()=>{document.querySelectorAll('#cloze input').forEach(i=>{i.value=clozeAns[+i.dataset.i];i.classList.add('ok');i.classList.remove('bad')});$('#score').textContent=''};
+$('#reshuffle').onclick=()=>{seed++;renderCloze()};
+$('#shadow').onclick=e=>{const b=e.target.closest('.reps button');if(b)b.classList.toggle('done')};
+$('#raw').addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='Enter')build()});
+
+// ---- sample: original dialogue (not from any broadcaster) ----
+const SAMPLE=`0:00 Hi Tom, you look exhausted. Late night?
+0:03 Not really, I just can't seem to shake off this jet lag.
+0:07 Where did you fly back from?
+0:09 Lisbon. Only a two-hour difference, but my body refuses to adjust.
+0:14 Two hours shouldn't knock you out like that.
+0:17 You'd think so. I woke up at four this morning and couldn't drift off again.
+0:22 Have you tried getting some daylight as soon as you wake up?
+0:26 Daylight? Honestly, I just reach for a coffee.
+0:29 That's the problem. Caffeine on an empty stomach makes the crash even worse.
+0:34 So what do you suggest, a brisk walk at dawn?
+0:37 Exactly. Ten minutes outside resets your internal clock faster than anything.
+0:42 Fine, I'll give it a go tomorrow. Any other tips?
+0:45 Skip the afternoon nap, however tempting it feels.
+0:49 That's going to be a struggle. My sofa is very persuasive.
+0:53 Then put your phone on the other side of the room and go for the walk instead.
+0:58 Deal. Remind me of this conversation when I'm grumpy at three o'clock.`;
+// ---- library (kept in this browser; export/import as JSON) ----
+let db=true,canEdit=true,lessons=store.get('lessons',[]),activeId=null;
+function persist(){store.set('lessons',lessons);renderCards()}
+function renderCards(){
+  const box=$('#cards');
+  if(!lessons.length){box.innerHTML='<p class="empty" id="libempty">Thư viện chưa có bài nào. Mở "Thêm bài học" bên dưới hoặc nhập file JSON.</p>';$('#libcount').textContent='';return}
+  $('#libcount').textContent=lessons.length+' bài';
+  box.innerHTML=lessons.map(L=>{const n=(L.names||'A, B');const segs=parse(L.raw||'');const dur=segs.length?fmt(segs[segs.length-1].end):'';return `<button class="card ${L.id===activeId?'active':''}" data-id="${L.id}"><span class="ct">${esc(L.title||'Bài chưa đặt tên')}</span><span class="cm">${esc(n)}${dur?' · '+dur:''}</span><span class="del" data-del="${L.id}" role="button" aria-label="Xoá bài">Xoá</span></button>`}).join('');
+}
+$('#cards').onclick=e=>{
+  const del=e.target.closest('[data-del]');
+  if(del){e.stopPropagation();const id=del.dataset.del;if(del.dataset.armed){lessons=lessons.filter(x=>x.id!==id);if(activeId===id){activeId=null;$('#lesson').hidden=true}persist()}else{del.dataset.armed='1';del.textContent='Xoá thật?';setTimeout(()=>{del.dataset.armed='';del.textContent='Xoá'},3000)}return}
+  const c=e.target.closest('.card');if(!c)return;const L=lessons.find(x=>x.id===c.dataset.id);if(!L)return;
+  activeId=L.id;renderCards();buildFrom(L);$('#lesson').scrollIntoView({behavior:'smooth',block:'start'});
+};
+$('#save').onclick=()=>{
+  const L=formLesson();if(!L.raw.trim()){$('#savenote').textContent='Chưa có phụ đề để lưu.';return}
+  if(!parse(L.raw).length){$('#savenote').textContent='Không đọc được phụ đề: mỗi đoạn cần bắt đầu bằng mốc giờ như 0:03, [00:03] hoặc (00:03).';return}
+  if(!L.title)L.title='Bài '+(lessons.length+1);
+  L.id='l'+Date.now().toString(36);L.createdAt=Date.now();lessons.unshift(L);persist();
+  $('#savenote').textContent='Đã lưu "'+L.title+'" vào thư viện.';$('#raw').value='';$('#title').value='';$('#url').value='';$('#addpanel').open=false;
+};
+$('#export').onclick=()=>{const blob=new Blob([JSON.stringify(lessons,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='sub-study-lessons.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),5000)};
+$('#import').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const arr=JSON.parse(r.result);if(!Array.isArray(arr))throw 0;const have=new Set(lessons.map(x=>x.id));for(const L of arr){if(L&&L.raw&&!have.has(L.id)){if(!L.id)L.id='l'+Math.random().toString(36).slice(2);lessons.push(L)}}persist();$('#libcount').textContent=lessons.length+' bài (đã nhập)'}catch(err){$('#savenote').textContent='File JSON không đúng định dạng.'}};r.readAsText(f);e.target.value=''};
+$('#save').hidden=false;$('#addtitle').textContent='Thêm bài học vào thư viện';$('#go').textContent='Xem thử trước';
+renderCards();
+if(lessons.length){activeId=lessons[0].id;renderCards();buildFrom(lessons[0])}
+// lessons.json next to this page (uploaded by the site owner) is merged in on load
+fetch('lessons.json',{cache:'no-store'}).then(r=>r.ok?r.json():null).then(arr=>{
+  if(!Array.isArray(arr))return;const have=new Set(lessons.map(x=>x.id));let added=0;
+  for(const L of arr){if(L&&L.raw&&L.id&&!have.has(L.id)){lessons.push(L);added++}}
+  if(added){persist();if(!activeId&&lessons.length){activeId=lessons[0].id;renderCards();buildFrom(lessons[0])}}
+}).catch(()=>{});
+
+// ---- AI via the Anthropic API, using your own key (stored only in this browser) ----
+const API='https://api.anthropic.com/v1/messages';
+function key(){return store.get('apikey','')}
+function model(){return store.get('model','claude-haiku-5-5')}
+function aiStatus(){const k=key();$('#aistatus').textContent=k?'Kết nối AI: đã có khoá · '+model():'Kết nối AI (chưa có khoá API)';$('#apikey').value=k;$('#model').value=model();sample=k?realSample:null;$('#chatnote').textContent=k?'':'Chế độ có AI cần khoá API: mở "Kết nối AI" ở đầu trang.'}
+$('#savekey').onclick=()=>{store.set('apikey',$('#apikey').value.trim());store.set('model',$('#model').value.trim()||'claude-haiku-5-5');aiStatus();$('#aipanel').open=false};
+$('#clearkey').onclick=()=>{store.set('apikey','');aiStatus()};
+async function callClaude(msgs,{signal,onText,maxTokens=400}={}){
+  const res=await fetch(API,{method:'POST',signal,headers:{'content-type':'application/json','x-api-key':key(),'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({model:model(),max_tokens:maxTokens,stream:!!onText,messages:msgs})});
+  if(!res.ok){const t=await res.text();const e={code:res.status===401?'not_granted':res.status===429?'rate_limited':'upstream_error',message:t};throw e}
+  if(!onText){const j=await res.json();return {text:(j.content||[]).map(c=>c.text||'').join(''),truncated:j.stop_reason==='max_tokens'}}
+  const reader=res.body.getReader();const dec=new TextDecoder();let buf='',text='';
+  while(true){const {value,done}=await reader.read();if(done)break;buf+=dec.decode(value,{stream:true});const lines=buf.split('\n');buf=lines.pop();
+    for(const l of lines){if(!l.startsWith('data:'))continue;try{const ev=JSON.parse(l.slice(5));if(ev.type==='content_block_delta'&&ev.delta&&ev.delta.text){text+=ev.delta.text;onText({text,delta:ev.delta.text})}}catch(e){}}}
+  return {text,truncated:false};
+}
+// same shape as the claude.ai page used: sample(input,opts) and sample.json(input,opts)
+function toMsgs(input){const arr=typeof input==='string'?[{role:'user',content:input}]:input;const m=[];for(const t of arr){if(m.length&&m[m.length-1].role===t.role)m[m.length-1].content+='\n\n'+t.content;else m.push({role:t.role,content:t.content})}return m}
+async function realSample(input,opts={}){try{return await callClaude(toMsgs(input),opts)}catch(e){if(e.name==='AbortError')throw {code:'cancelled',message:''};throw e.code?e:{code:'upstream_error',message:String(e)}}}
+realSample.json=async(input,opts={})=>{const {text}=await realSample(input,{...opts,maxTokens:600});const m=text.match(/\{[\s\S]*\}|\[[\s\S]*\]/);if(!m)throw {code:'invalid_json',message:'',text};return JSON.parse(m[0])};
+aiStatus();
+})();
+</script>
+</body>
+</html>
