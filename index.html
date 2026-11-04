@@ -749,7 +749,7 @@ document.addEventListener('click',e=>{
 let rec=null,recBtn=null;
 function micHint(where){where.textContent='Trình duyệt này không cho trang nghe micro. Cách khác: bấm vào ô chữ rồi dùng nút micro trên bàn phím điện thoại (Gboard / iPhone), hoặc Win+H trên Windows, double-tap Fn trên Mac để đọc chính tả.'}
 document.addEventListener('click',e=>{
-  const b=e.target.closest('.mic');if(!b||b.classList.contains('readmic'))return;
+  const b=e.target.closest('.mic');if(!b||!b.dataset.mic)return; // only the chat-box mic buttons; other 🎤 buttons have their own handlers
   const input=document.getElementById(b.dataset.mic);const note=$(b.dataset.mic==='gin'?'#gnote':'#chatnote');
   if(rec){rec.stop();return}
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
