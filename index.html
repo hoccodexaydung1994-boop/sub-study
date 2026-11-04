@@ -170,7 +170,7 @@ details.panel>summary{font-weight:500;color:var(--fg);font-size:14px}
     <div class="field">
       <label for="raw">Phụ đề</label>
       <textarea id="raw" placeholder="0:03  Hello and welcome...&#10;0:07  Today we're talking about..."></textarea>
-      <div class="hint">Nhận cả 3 kiểu: bản copy từ nút <em>Show transcript</em> dưới video YouTube (<code>0:03 text</code>), file .srt/.vtt, hoặc file từ tool Python (<code>[00:03] A: text</code>).
+      <div class="hint">Excel/CSV: mỗi dòng một câu; cột <b>text</b> (câu/câu hỏi), tuỳ chọn cột <b>part</b> (A đọc to, B nhắc lại, C ghép câu, D trả lời ngắn — hoặc reading/repeat/build/answer) và <b>answer</b> (đáp án cho D). Không có cột part thì câu có dấu ? kèm đáp án → D, còn lại → A.<br>Phụ đề .txt nhận cả 3 kiểu: bản copy từ nút <em>Show transcript</em> dưới video YouTube (<code>0:03 text</code>), file .srt/.vtt, hoặc file từ tool Python (<code>[00:03] A: text</code>).
         <details><summary>Cách lấy transcript trên YouTube</summary>Dưới video → nút <b>…</b> (hoặc phần mô tả) → <b>Show transcript</b> → bôi đen toàn bộ cột bên phải → copy → dán vào đây.</details>
       </div>
     </div>
@@ -178,6 +178,7 @@ details.panel>summary{font-weight:500;color:var(--fg);font-size:14px}
       <button class="primary" id="go">Xem thử</button>
       <button class="primary" id="save" hidden>Lưu vào thư viện</button>
       <label class="small" style="margin:0;text-transform:none;letter-spacing:0;font-size:13px;cursor:pointer;border:1px solid var(--line);border-radius:6px;padding:7px 12px;color:var(--fg)">Nhập file .txt<input id="txtfile" type="file" accept=".txt,.srt,.vtt,text/plain" multiple hidden></label>
+      <label class="small" style="margin:0;text-transform:none;letter-spacing:0;font-size:13px;cursor:pointer;border:1px solid var(--line);border-radius:6px;padding:7px 12px;color:var(--fg)">Nhập Excel/CSV (bộ câu luyện)<input id="xlsfile" type="file" accept=".xlsx,.xls,.csv" hidden></label>
       <button id="sample">Dùng bài mẫu</button>
       <span class="hint" style="margin:0">Ngưỡng đổi người: <input id="gap" type="text" value="1.0" style="width:4em;padding:3px 6px"> giây</span>
     </div>
@@ -244,7 +245,7 @@ details.panel>summary{font-weight:500;color:var(--fg);font-size:14px}
       </div>
       <div id="exlearn">
         <p class="hint" style="margin:0 0 12px">Bốn dạng nói của Versant. Mỗi câu: bấm 🔊 nghe mẫu bao nhiêu lần tuỳ ý → 🎤 nói → xem từ xanh/đỏ → làm lại đến khi ≥ 90%. Câu lấy từ bộ luyện có sẵn + bài bạn đang học.</p>
-        <div class="toolbar"><span class="seg" id="lparts"><button class="small" data-p="A" aria-pressed="true">A · Đọc to</button><button class="small" data-p="B" aria-pressed="false">B · Nghe &amp; nhắc lại</button><button class="small" data-p="C" aria-pressed="false">C · Ghép câu</button><button class="small" data-p="D" aria-pressed="false">D · Trả lời ngắn</button></span></div>
+        <div class="toolbar"><span class="seg" id="lparts"></span></div>
         <div class="toolbar"><button class="small" data-mictest="#micout1">Kiểm tra micro</button><span class="hint" id="micout1" style="margin:0"></span></div>
         <div class="hint" id="lguide" style="margin:0 0 12px"></div>
         <div class="exam" id="learn"></div>
@@ -307,6 +308,7 @@ details.panel>summary{font-weight:500;color:var(--fg);font-size:14px}
   </div>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
 (function(){
 const $=s=>document.querySelector(s);
@@ -396,7 +398,9 @@ let current={title:'',url:''};
 function formLesson(){
   let url=$('#url').value.trim();
   if(!url){const m=$('#raw').value.match(/https?:\/\/(?:www\.)?(?:youtube\.com\/watch\?[^\s]*v=|youtu\.be\/)[A-Za-z0-9_-]{11}/);if(m){url=m[0];$('#url').value=url}}
-  return {title:$('#title').value.trim(),url,names:$('#names').value,raw:$('#raw').value,gap:parseFloat($('#gap').value)||1}}
+  const L={title:$('#title').value.trim(),url,names:$('#names').value,raw:$('#raw').value,gap:parseFloat($('#gap').value)||1};
+  if($('#raw').dataset.items){try{L.items=JSON.parse($('#raw').dataset.items)}catch(e){}}
+  return L}
 function build(){buildFrom(formLesson())}
 function buildFrom(L){
   current=L;$('#url').value=L.url||'';
@@ -520,6 +524,7 @@ function splitThree(s){const w=s.split(/\s+/);const a=Math.round(w.length/3),b=M
 function orderScore(target,heard){const T=norm(target),H=norm(heard);let i=0;for(const w of H){if(w===T[i])i++}return T.length?Math.round(100*i/T.length):0}
 async function buildExam(parts){
   const used=new Set();const items=[];
+  if(current.items&&current.items.length){const r=mulberry(Date.now()%99991);for(const p of ['A','B','C','D']){if(!parts.has(p))continue;const pool=current.items.filter(it=>it.part===p);shuffle(pool,r);for(const it of pool.slice(0,p==='D'?5:4)){const o={part:p,label:{A:'Đọc to',B:'Nghe & nhắc lại',C:'Ghép câu',D:'Trả lời ngắn'}[p],text:it.text,limit:{A:12,B:10,C:12,D:6}[p],answers:it.answers||[]};if(p==='C'){const ch=splitThree(it.text);const sh=ch.slice();shuffle(sh,r);if(sh.join()===ch.join())sh.reverse();o.chunks=sh}items.push(o)}}if(items.length)return items}
   if(parts.has('A'))for(const s of pickLines(4,6,16,used)){used.add(s);items.push({part:'A',label:'Đọc to',text:s,limit:12})}
   if(parts.has('B'))for(const s of pickLines(4,5,12,used)){used.add(s);items.push({part:'B',label:'Nghe & nhắc lại',text:s,limit:10})}
   if(parts.has('C'))for(const s of pickLines(3,6,12,used)){used.add(s);const ch=splitThree(s);const sh=ch.slice();shuffle(sh,mulberry(s.length));if(sh.join()===ch.join())sh.reverse();items.push({part:'C',label:'Ghép câu',text:s,chunks:sh,limit:12})}
@@ -585,7 +590,11 @@ const PRACTICE={ // original practice sentences written in the style of each tas
   C:['The bus was late this morning.','I would like a cup of tea, please.','We watched a film after dinner last night.','My neighbour plays the piano every evening.','Could you turn the music down a little?','They moved to a bigger flat in March.'],
   D:[{q:'How many legs does a cat have?',a:['four','4']},{q:'What do you use to write on paper?',a:['pen','pencil']},{q:'Is the sun hot or cold?',a:['hot']},{q:'What is the opposite of fast?',a:['slow']},{q:'Which is smaller, a bus or a bicycle?',a:['bicycle','bike']},{q:'What do you drink when you are thirsty?',a:['water','juice','tea']},{q:'What day comes after Monday?',a:['tuesday']},{q:'Do you sleep in a bed or in a kitchen?',a:['bed']}],
 };
+const PART_NAMES={A:'Đọc to (Read Aloud)',B:'Nghe & nhắc lại (Repeat)',C:'Ghép câu (Sentence Builds)',D:'Trả lời ngắn (Short Questions / Conversations)',E:'Chính tả (Dictation)',F:'Điền từ (Sentence Completion)',O:'Nói tự do (Passage / Story / Open)'};
 const GUIDES={
+  E:'Dạng Chính tả: nghe một câu, gõ lại đúng từng từ. Mẹo: nghe cả câu rồi mới gõ, chú ý -s, -ed, mạo từ a/the; nghe lại được nhiều lần khi luyện.',
+  F:'Dạng Điền từ: đọc câu có chỗ trống, gõ từ còn thiếu cho hợp nghĩa và ngữ pháp. Bộ câu này không kèm đáp án, nên có khoá API thì AI chấm, không thì tự đối chiếu.',
+  O:'Dạng Nói tự do: đọc/nghe đoạn văn hoặc câu hỏi mở, rồi nói lại bằng lời của mình trong 30–40 giây. Máy ghi lại lời bạn; có khoá API thì AI nhận xét nội dung, ngữ pháp, từ vựng.',
   A:'Dạng Đọc to: màn hình hiện câu, bạn đọc rõ ràng, tự nhiên, không ngắt từng từ. Máy chấm phát âm và độ trôi chảy. Mẹo: ngắt theo cụm nghĩa, nhấn từ mang nội dung, nối âm giữa các từ.',
   B:'Dạng Nghe & nhắc lại: nghe một câu, nhắc lại y hệt. Khi học thì nhìn chữ được; khi thi sẽ không có chữ. Mẹo: nhớ theo cụm (2–3 cụm/câu) chứ không nhớ từng từ; giữ nguyên ngữ điệu của câu mẫu.',
   C:'Dạng Ghép câu: nghe 3 mảnh câu bị xáo, nói lại thành một câu đúng thứ tự. Mẹo: tìm mảnh có chủ ngữ (I, we, the bus…) để đặt đầu câu, mảnh có dấu chấm/dấu hỏi đặt cuối.',
@@ -593,27 +602,51 @@ const GUIDES={
 };
 let lpart='A';
 function renderLearn(){
+  const have=new Set((current.items||[]).map(it=>it.part));const parts=have.size?['A','B','C','D','E','F','O'].filter(p=>have.has(p)):['A','B','C','D'];
+  if(!parts.includes(lpart))lpart=parts[0];
+  $('#lparts').innerHTML=parts.map(p=>`<button class="small" data-p="${p}" aria-pressed="${p===lpart}">${p} · ${PART_NAMES[p].split(' (')[0]}${have.size?' <small>'+(current.items.filter(it=>it.part===p).length)+'</small>':''}</button>`).join('');
   $('#lguide').textContent=GUIDES[lpart];
   const items=[];
-  if(lpart==='D'){for(const x of PRACTICE.D)items.push({part:'D',text:x.q,answers:x.a})}
+  const own=(current.items||[]).filter(it=>it.part===lpart);
+  if(own.length){for(const it of own){const o={part:lpart,text:it.text,answers:it.answers||[]};if(lpart==='C'){o.chunks=it.text.split(/\s{2,}|\s\/\s|\|/).map(x=>x.trim()).filter(Boolean);if(o.chunks.length<2)o.chunks=splitThree(it.text);o.given=true}items.push(o)}}
+  else if(lpart==='D'){for(const x of PRACTICE.D)items.push({part:'D',text:x.q,answers:x.a})}
   else{const rng=lpart==='A'?[5,22]:lpart==='B'?[4,14]:[6,14];const mine=turns.map(t=>t.text).filter(t=>{const k=t.split(/\s+/).length;return k>=rng[0]&&k<=rng[1]});for(const s of [...mine,...PRACTICE[lpart]]){const it={part:lpart,text:s};if(lpart==='C'){const ch=splitThree(s);const sh=ch.slice();shuffle(sh,mulberry(s.length));if(sh.join()===ch.join())sh.reverse();it.chunks=sh}items.push(it)}}
-  $('#lguide').textContent+=` — ${items.length} câu (${lpart==='D'?items.length:items.length-PRACTICE[lpart].length} từ bài này).`;
-  $('#learn').innerHTML=items.map((it,i)=>`<div class="exq" data-i="${i}"><div class="eyebrow"><span>${i+1}</span><span class="best"></span></div><div class="prompt">${it.part==='C'?it.chunks.map(c=>`<span class="chip">${esc(c)}</span>`).join(''):it.part==='D'?esc(it.text):esc(it.text)}</div><div class="state"></div><div class="cbtns" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"><button class="small" data-hear>🔊 Nghe</button><button class="small mic" data-say style="width:auto;border-radius:6px;font-size:13px">🎤 Nói</button>${it.part!=='A'?'<button class="small" data-hint>Gợi ý</button>':''}</div></div>`).join('');
+  $('#lguide').textContent+=own.length?` — ${items.length} câu từ bộ luyện này.`:` — ${items.length} câu (${lpart==='D'?0:items.length-PRACTICE[lpart].length} từ bài này + câu mẫu).`;
+  $('#learn').innerHTML=items.map((it,i)=>{const typed=it.part==='E'||it.part==='F';return `<div class="exq" data-i="${i}"><div class="eyebrow"><span>${i+1}</span><span class="best"></span></div><div class="prompt">${it.part==='C'?it.chunks.map(c=>`<span class="chip">${esc(c)}</span>`).join(''):it.part==='E'?'🔊 …':esc(it.text)}</div><div class="state"></div>${typed?`<input type="text" class="typed" placeholder="${it.part==='E'?'Gõ câu bạn nghe được…':'Gõ từ còn thiếu…'}" style="margin-top:8px">`:''}<div class="cbtns" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">${it.part==='F'?'':'<button class="small" data-hear>🔊 Nghe</button>'}${typed?'<button class="small primary" data-check>Chấm</button>':'<button class="small mic" data-say style="width:auto;border-radius:6px;font-size:13px">🎤 Nói</button>'}${it.part!=='A'?'<button class="small" data-hint>Gợi ý</button>':''}</div></div>`}).join('');
   $('#learn')._items=items;
 }
 $('#lparts').onclick=e=>{const b=e.target.closest('button');if(!b)return;lpart=b.dataset.p;[...e.currentTarget.children].forEach(x=>x.setAttribute('aria-pressed',x===b));renderLearn()};
 $('#learn').onclick=async e=>{
   const b=e.target.closest('button');if(!b)return;const box=b.closest('.exq');const it=$('#learn')._items[+box.dataset.i];const st=box.querySelector('.state'),prompt=box.querySelector('.prompt');
-  if(b.hasAttribute('data-hear')){if(it.part==='C'){for(const c of it.chunks){await speakAsync(c,0.9);await new Promise(r=>setTimeout(r,300))}}else await speakAsync(it.text,0.9);return}
-  if(b.hasAttribute('data-hint')){if(it.part==='C')st.textContent='Câu đúng: '+it.text;else if(it.part==='D')st.textContent='Trả lời: '+it.answers[0];else st.textContent=it.text;return}
+  if(b.hasAttribute('data-hear')){if(it.part==='C'){for(const c of it.chunks){await speakAsync(c,0.9);await new Promise(r=>setTimeout(r,300))}}else await speakAsync(it.text.replace(/Speaker \d:/g,''),it.part==='E'?0.85:0.9);return}
+  if(b.hasAttribute('data-hint')){
+    if(it.part==='D'||it.part==='F'||(it.part==='C'&&it.given)){
+      if(it.answers&&it.answers.length){st.textContent='Đáp án: '+it.answers.join(' / ');return}
+      if(!sample){st.textContent=it.part==='C'?'Không có đáp án sẵn. Tìm mảnh có chủ ngữ đặt đầu, mảnh có dấu ? hoặc . đặt cuối.':'Bộ câu này không kèm đáp án; có khoá API thì AI gợi ý.';return}
+      st.textContent='Đang hỏi AI…';try{const {text:a}=await sample(it.part==='C'?`Rearrange these jumbled parts into one correct English sentence. Reply with only the sentence:\n${it.text}`:it.part==='F'?`Fill the blank with the single most natural word. Reply with only the word:\n${it.text}`:`Answer this spoken-test question in one to three words. Reply with only the answer:\n${it.text}`,{modelTier:'quick'});it.answers=[a.trim().toLowerCase()];st.textContent='AI gợi ý: '+a.trim()}catch(e){st.textContent='AI chưa trả lời được.'}
+      return}
+    st.textContent=it.text;return}
+  if(b.hasAttribute('data-check')){
+    const typed=box.querySelector('.typed').value.trim();if(!typed){st.textContent='Chưa gõ gì.';return}
+    if(it.part==='E'){const r=markWords(it.text,typed);prompt.innerHTML=r.html;const sc=r.n?Math.round(100*r.ok/r.n):0;st.textContent=`${sc}% đúng${sc<100?' — từ đỏ là gõ sai hoặc thiếu.':' — chuẩn!'}`;box.classList.toggle('ok',sc>=90);box.classList.toggle('bad',sc<90);const best=box.querySelector('.best');if(sc>+(best.dataset.v||0)){best.dataset.v=sc;best.textContent='Tốt nhất: '+sc+'%'}return}
+    // F: compare with answers, else ask AI
+    const T=typed.toLowerCase();
+    if(it.answers&&it.answers.length){const ok=it.answers.includes(T);st.textContent=ok?'✓ Đúng':'✗ Chưa đúng. Đáp án: '+it.answers.join(' / ');box.classList.toggle('ok',ok);box.classList.toggle('bad',!ok);return}
+    if(!sample){st.textContent='Bạn gõ: “'+typed+'”. Bộ câu không kèm đáp án; có khoá API thì AI chấm.';return}
+    st.textContent='AI đang chấm…';try{const r=await sample.json(`Sentence with a blank: "${it.text}"\nLearner's word: "${typed}"\nReply with only JSON {"ok":true|false,"best":"<most natural word>","why":"<one short sentence in Vietnamese>"}`,{modelTier:'quick'});st.textContent=(r.ok?'✓ Chấp nhận được. ':'✗ Chưa hợp. ')+'Từ hay nhất: '+r.best+'. '+(r.why||'');box.classList.toggle('ok',!!r.ok);box.classList.toggle('bad',!r.ok)}catch(e){st.textContent='AI chưa chấm được, thử lại.'}
+    return}
   if(rec){try{rec.stop()}catch(x){}return}
   b.classList.add('on');st.textContent='🎤 Đang nghe…';let heard='';
-  try{heard=await listenAsync(h=>{st.textContent='🎤 '+h})}catch(err){b.classList.remove('on');st.textContent=micMsg(err);return}
+  try{heard=it.part==='O'?await listenLong(40,h=>{st.textContent='🎤 '+h}):await listenAsync(h=>{st.textContent='🎤 '+h})}catch(err){b.classList.remove('on');st.textContent=micMsg(err);return}
   b.classList.remove('on');
   if(!heard){st.textContent='Máy không nhận ra lời nào (im lặng hoặc quá nhỏ). Bấm "Kiểm tra micro" ở trên để xem máy có thu được tiếng không.';return}
   let score;
-  if(it.part==='D'){const H=norm(heard).join(' ');score=it.answers.some(a=>(' '+H+' ').includes(' '+a.toLowerCase()+' '))?100:0;st.textContent=`Máy nghe: “${heard}” → ${score?'✓ đúng':'✗ chưa đúng'}`}
-  else{const r=markWords(it.text,heard);const w=r.n?Math.round(100*r.ok/r.n):0;score=it.part==='C'?Math.round((w+orderScore(it.text,heard))/2):w;if(it.part==='C')prompt.innerHTML=r.html;else prompt.innerHTML=r.html;st.textContent=`Máy nghe: “${heard}” · ${score}%`+(score<90?' — đọc lại, nhấn rõ từ đỏ.':' — tốt!')}
+  if(it.part==='O'){st.textContent='Bạn nói: “'+heard+'”';if(sample){st.textContent+=' · AI đang nhận xét…';try{const {text:fb}=await sample(`Learner (Vietnamese, intermediate) did a spoken task.\nTask/prompt: "${it.text}"\nTranscript of the learner's speech: "${heard}"\nIn Vietnamese, in at most 4 short lines: (1) did they cover the main points, (2) one grammar fix with the corrected English, (3) one better word/phrase, (4) a score /10. No greeting.`,{modelTier:'quick'});st.textContent='Bạn nói: “'+heard+'”\n'+fb.trim();st.style.whiteSpace='pre-wrap'}catch(e){st.textContent+=' (AI chưa nhận xét được)'}}return}
+  if(it.part==='D'){const H=norm(heard).join(' ');
+    if(it.answers&&it.answers.length){score=it.answers.some(a=>(' '+H+' ').includes(' '+a.toLowerCase()+' '))?100:0;st.textContent=`Máy nghe: “${heard}” → ${score?'✓ đúng':'✗ chưa đúng'}`}
+    else if(sample){st.textContent='Máy nghe: “'+heard+'” · AI đang chấm…';try{const r=await sample.json(`Spoken-test question (may include a short dialogue): "${it.text}"\nLearner's answer: "${heard}"\nReply with only JSON {"ok":true|false,"answer":"<correct short answer>","why":"<one short sentence in Vietnamese>"}`,{modelTier:'quick'});score=r.ok?100:0;it.answers=[String(r.answer||'').toLowerCase()];st.textContent=`Máy nghe: “${heard}” → ${r.ok?'✓ đúng':'✗ chưa đúng'} · đáp án: ${r.answer}. ${r.why||''}`}catch(e){score=0;st.textContent='Máy nghe: “'+heard+'”. AI chưa chấm được.'}}
+    else{score=0;st.textContent='Máy nghe: “'+heard+'”. Không có đáp án sẵn — bấm Gợi ý (cần khoá API) hoặc tự đối chiếu.';return}}
+  else{const r=markWords(it.text,heard);const w=r.n?Math.round(100*r.ok/r.n):0;score=it.part==='C'?(it.given&&!(it.answers&&it.answers[0])?w:Math.round((w+orderScore(it.answers&&it.answers[0]||it.text,heard))/2)):w;if(it.part==='C')prompt.innerHTML=r.html;else prompt.innerHTML=r.html;st.textContent=`Máy nghe: “${heard}” · ${score}%`+(score<90?' — đọc lại, nhấn rõ từ đỏ.':' — tốt!')}
   const best=box.querySelector('.best');const prev=+(best.dataset.v||0);if(score>prev){best.dataset.v=score;best.textContent='Tốt nhất: '+score+'%'}
   box.classList.toggle('ok',score>=90);box.classList.toggle('bad',score<90);
 };
@@ -635,6 +668,11 @@ function listenAsync(onInterim){return new Promise((res,rej)=>{const SR=window.S
   r.onresult=ev=>{heard='';for(const x of ev.results)heard+=x[0].transcript;onInterim&&onInterim(heard)};
   r.onerror=ev=>{err=ev.error};r.onend=()=>{if(rec===r)rec=null;if(err==='not-allowed'||err==='service-not-allowed')rej('denied');else if(err&&err!=='no-speech'&&err!=='aborted'&&!heard)rej(err);else res(heard.trim())};
   try{r.start()}catch(e){rec=null;rej('start')}})}
+function listenLong(limit,onInterim){return new Promise((res,rej)=>{const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR)return rej('nosr');if(rec){try{rec.stop()}catch(e){}}
+  const r=new SR();rec=r;r.lang='en-US';r.interimResults=true;r.continuous=true;let fin='',interim='',err=null;
+  r.onresult=ev=>{interim='';for(let i=ev.resultIndex;i<ev.results.length;i++){if(ev.results[i].isFinal)fin+=ev.results[i][0].transcript+' ';else interim+=ev.results[i][0].transcript}onInterim&&onInterim((fin+interim).trim())};
+  r.onerror=ev=>{err=ev.error};r.onend=()=>{clearTimeout(t);if(rec===r)rec=null;if(err==='not-allowed'||err==='service-not-allowed')rej('denied');else res((fin+interim).trim())};
+  const t=setTimeout(()=>{try{r.stop()}catch(e){}},limit*1000);try{r.start()}catch(e){rec=null;rej('start')}})}
 const MIC_MSG={denied:'Chrome chưa cho trang dùng micro: bấm biểu tượng 🔒/🎤 cạnh địa chỉ web → Microphone → Allow, rồi tải lại.',
   'audio-capture':'Không có micro hoặc micro đang bị tắt. Kiểm tra Windows: Settings → System → Sound → Input, chọn đúng micro và nói thử xem thanh âm lượng có nhảy không.',
   network:'Không kết nối được dịch vụ nhận dạng giọng nói của Chrome (cần Internet; một số mạng/VPN chặn). Thử đổi mạng hoặc tắt VPN.',
@@ -792,17 +830,57 @@ function shuffle(arr,r){for(let i=arr.length-1;i>0;i--){const j=Math.floor(r()*(
 
 // ---- events ----
 $('#go').onclick=build;
+function rowsToItems(rows){
+  if(!rows.length)return [];
+  const hdr=rows[0].map(h=>String(h||'').trim().toLowerCase());
+  const find=(...names)=>hdr.findIndex(h=>names.some(n=>h===n||h.includes(n)));
+  let iT=find('nội dung','text','sentence','câu hỏi','question','prompt','content'),iK=find('dạng bài','dạng','task','type','skill'),iP=find('part'),iA=find('đáp án','answer','key','expected');
+  const hasHeader=iT>=0;
+  if(!hasHeader){iT=0;const c1=String(rows[0][1]||'').trim();const isPart=/^(a|b|c|d|read|repeat|build|answer)\w*$/i.test(c1);const w=Math.max(...rows.slice(0,20).map(r=>r.length));iK=isPart?1:-1;iA=isPart?(w>2?2:-1):(w>1?1:-1)}
+  const items=[];
+  for(const r of rows.slice(hasHeader?1:0)){
+    const text=String(r[iT]||'').replace(/\s+/g,' ').trim();if(!text)continue;
+    const kind=((iK>=0?String(r[iK]||''):'')+' '+(iP>=0&&iK<0?String(r[iP]||''):'')).trim().toLowerCase();
+    const ans=iA>=0?String(r[iA]||'').split(/[;|/]/).map(x=>x.trim().toLowerCase()).filter(Boolean):[];
+    let part;
+    if(/read aloud|đọc to|^a$/.test(kind))part='A';
+    else if(/repeat|nhắc|^b$/.test(kind))part='B';
+    else if(/build|ghép|jumble|^c$/.test(kind))part='C';
+    else if(/short|conversation|hội thoại|answer|trả lời|^d$/.test(kind))part='D';
+    else if(/dictation|chính tả|^e$/.test(kind))part='E';
+    else if(/completion|điền|fill|^f$/.test(kind))part='F';
+    else if(/passage|story|open|kể|tự do|^o$/.test(kind))part='O';
+    else part=/_{3,}/.test(text)?'F':ans.length?'D':'A';
+    items.push({part,text,answers:ans});
+  }
+  return items;
+}
+$('#xlsfile').onchange=async e=>{
+  const f=e.target.files[0];e.target.value='';if(!f)return;
+  let rows=[];
+  try{
+    if(/\.csv$/i.test(f.name)){const t=await f.text();rows=t.split(/\r?\n/).filter(Boolean).map(l=>l.match(/("([^"]|"")*"|[^,]*)(,|$)/g).map(c=>c.replace(/,$/,'').replace(/^"|"$/g,'').replace(/""/g,'"')))}
+    else{if(!window.XLSX){$('#savenote').textContent='Không tải được thư viện đọc Excel; lưu file thành .csv rồi thử lại.';return}const wb=XLSX.read(await f.arrayBuffer(),{type:'array'});rows=[];for(const n of wb.SheetNames){rows=rows.concat(XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,defval:''}))}}
+  }catch(err){$('#savenote').textContent='Không đọc được file: '+(err.message||err);return}
+  const items=rowsToItems(rows);
+  if(!items.length){$('#savenote').textContent='Không thấy câu nào. Cần một cột chứa câu (tên cột: text / sentence / câu).';return}
+  const title=f.name.replace(/\.(xlsx|xls|csv)$/i,'');const cnt={};for(const it of items)cnt[it.part]=(cnt[it.part]||0)+1;
+  // a practice set is stored as a lesson whose transcript is its own sentences, so every tab still works
+  const raw=items.map((it,i)=>`[${fmt(i*5)}] ${it.part==='D'?it.text+(it.answers[0]?' — '+it.answers[0]:''):it.text}`).join('\n');
+  $('#title').value=title;$('#names').value='A, B';$('#url').value='';$('#raw').value=raw;$('#raw').dataset.items=JSON.stringify(items);
+  $('#savenote').textContent=`Đọc được ${items.length} câu (`+Object.entries(cnt).map(([k,v])=>k+': '+v).join(', ')+'). Bấm "Lưu vào thư viện" hoặc "Xem thử trước".';
+};
 $('#txtfile').onchange=async e=>{
   const files=[...e.target.files];e.target.value='';if(!files.length)return;
   for(const f of files){
     let raw=await f.text();
     let names='';const m=raw.match(/^\s*speakers?\s*:\s*(.+)$/im);if(m){names=m[1].trim();raw=raw.replace(m[0],'')}
-    $('#title').value=f.name.replace(/\.(txt|srt|vtt)$/i,'');$('#names').value=names||$('#names').value||'A, B';$('#url').value='';$('#raw').value=raw;
+    delete $('#raw').dataset.items;$('#title').value=f.name.replace(/\.(txt|srt|vtt)$/i,'');$('#names').value=names||$('#names').value||'A, B';$('#url').value='';$('#raw').value=raw;
     if(!parse(raw).length){$('#savenote').textContent=`Không đọc được "${f.name}": thiếu mốc giờ ở đầu đoạn.`;continue}
     if(canEdit&&!$('#save').hidden){$('#save').click();await new Promise(r=>setTimeout(r,800))}else build();
   }
 };
-$('#sample').onclick=()=>{$('#raw').value=SAMPLE;$('#url').value='';$('#names').value='Mia, Tom';$('#title').value='Bài mẫu: Jet lag';build()};
+$('#sample').onclick=()=>{delete $('#raw').dataset.items;$('#raw').value=SAMPLE;$('#url').value='';$('#names').value='Mia, Tom';$('#title').value='Bài mẫu: Jet lag';build()};
 document.querySelector('.tabs').onclick=e=>{const b=e.target.closest('[role=tab]');if(b)showView(b.dataset.v)};
 $('#vocab').onclick=e=>{const b=e.target.closest('button');if(!b)return;const w=b.closest('.vword').dataset.w;known.has(w)?known.delete(w):known.add(w);store.set('known',[...known]);renderVocab();renderCloze()};
 $('#resetknown').onclick=()=>{known=new Set();store.set('known',[]);renderVocab();renderCloze()};
