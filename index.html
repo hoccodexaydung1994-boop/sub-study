@@ -107,6 +107,19 @@ details.panel>summary{font-weight:500;color:var(--fg);font-size:14px}
 .chatbar{display:flex;gap:8px;flex-wrap:wrap}
 .mic{font-size:16px;padding:6px 10px}
 .spk{border:none;background:transparent;padding:0 4px;font-size:13px;cursor:pointer;vertical-align:middle}
+.exam{display:grid;gap:10px}
+.exq{padding:14px;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
+.exq.cur{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+.exq .eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600;display:flex;justify-content:space-between}
+.exq .prompt{font-family:var(--serif);font-size:20px;line-height:1.5;margin:6px 0 4px;min-height:1.5em}
+.exq .prompt .wok{color:var(--ok)}.exq .prompt .wbad{color:var(--bad);text-decoration:underline dotted}
+.exq .prompt .chip{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:2px 10px;margin:2px 4px 2px 0;font-size:16px}
+.exq .state{font-size:13px;color:var(--muted);min-height:1.4em}
+.exq .bar{height:4px;background:var(--line);border-radius:2px;overflow:hidden;margin-top:8px}
+.exq .bar i{display:block;height:100%;background:var(--accent);width:0;transition:width .25s linear}
+.exq.ok{border-color:var(--ok)}.exq.bad{border-color:var(--bad)}
+.exsum{padding:14px;border-radius:10px;background:var(--accent-soft)}
+.exsum b{font-variant-numeric:tabular-nums}
 .coach{display:grid;gap:10px}
 .chunk{padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--panel);opacity:.55}
 .chunk.cur{opacity:1;border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
@@ -180,6 +193,7 @@ details.panel>summary{font-weight:500;color:var(--fg);font-size:14px}
       <button role="tab" data-v="shadow">4 · Shadowing</button>
       <button role="tab" data-v="role">5 · Nhập vai</button>
       <button role="tab" data-v="coach">6 · Đọc theo AI</button>
+      <button role="tab" data-v="exam">7 · Thi kiểu Versant</button>
     </div>
     <div class="stats" id="stats"></div>
 
@@ -221,6 +235,21 @@ details.panel>summary{font-weight:500;color:var(--fg);font-size:14px}
         <span class="hint" style="margin:0">Tốc độ: <select id="crate" style="font:inherit"><option value="0.75">chậm</option><option value="0.9" selected>vừa</option><option value="1">tự nhiên</option></select></span>
       </div>
       <div class="coach" id="coach"></div>
+    </section>
+
+    <section class="view" id="v-exam" hidden>
+      <p class="hint" style="margin:0 0 12px">Mô phỏng 4 dạng của bài thi nói Versant, câu lấy từ bài đang học. Mọi thứ tự động: AI đọc đề, bạn trả lời vào micro trong thời gian cho phép, trang chấm rồi chuyển câu. Không nhìn chữ ở phần B và D (giống thi thật).</p>
+      <div class="toolbar">
+        <span class="seg" id="exparts">
+          <button class="small" data-p="A" aria-pressed="true">A · Đọc to</button>
+          <button class="small" data-p="B" aria-pressed="true">B · Nghe &amp; nhắc lại</button>
+          <button class="small" data-p="C" aria-pressed="true">C · Ghép câu</button>
+          <button class="small" data-p="D" aria-pressed="true">D · Trả lời ngắn</button>
+        </span>
+        <button class="primary small" id="exstart">Bắt đầu thi</button>
+        <button class="small" id="exstop" hidden>Dừng</button>
+      </div>
+      <div class="exam" id="exam"></div>
     </section>
 
     <section class="view" id="v-role" hidden>
@@ -458,6 +487,86 @@ Judge meaning and naturalness, not word-for-word match. Score 8+ means the idea 
 $('#gform').onsubmit=e=>{e.preventDefault();const v=$('#gin').value.trim();if(!v||gBusy||gIdx>=turns.length)return;$('#gin').value='';gBusy=true;$('#gsend').disabled=true;gGrade(v).finally(()=>{gBusy=false})};
 $('#ghint').onclick=()=>{if(gIdx<turns.length){const w=turns[gIdx].text.split(/\s+/);$('#gnote').textContent='Gợi ý: '+w.slice(0,Math.ceil(w.length/3)).join(' ')+' …'}};
 $('#greset').onclick=gReset;
+
+// ---- 7. Versant-style exam: four task types, automatic flow ----
+const SHORT_QS=[ // original items; the AI generates lesson-specific ones when a key is available
+  {q:'How many days are there in a week?',a:['seven','7']},
+  {q:'What do you use to cut paper?',a:['scissors','knife']},
+  {q:'Is ice hot or cold?',a:['cold']},
+  {q:'What is the opposite of early?',a:['late']},
+  {q:'Which is bigger, a mouse or a horse?',a:['horse']},
+  {q:'What do you wear on your feet?',a:['shoes','socks','sandals','boots']},
+  {q:'What colour is the sky on a clear day?',a:['blue']},
+  {q:'Do you read a book or drink a book?',a:['read']},
+  {q:'What month comes after June?',a:['july']},
+  {q:'If you are thirsty, do you want food or water?',a:['water']},
+];
+let exRun=false,exItems=[],exIdx=0;
+function pickLines(n,min=6,max=14,used=new Set()){const c=turns.map(t=>t.text).filter(t=>{const k=t.split(/\s+/).length;return k>=min&&k<=max&&!used.has(t)});const r=mulberry(Date.now()%100000);shuffle(c,r);return c.slice(0,n)}
+function splitThree(s){const w=s.split(/\s+/);const a=Math.round(w.length/3),b=Math.round(2*w.length/3);return [w.slice(0,a).join(' '),w.slice(a,b).join(' '),w.slice(b).join(' ')]}
+function orderScore(target,heard){const T=norm(target),H=norm(heard);let i=0;for(const w of H){if(w===T[i])i++}return T.length?Math.round(100*i/T.length):0}
+async function buildExam(parts){
+  const used=new Set();const items=[];
+  if(parts.has('A'))for(const s of pickLines(4,6,16,used)){used.add(s);items.push({part:'A',label:'Đọc to',text:s,limit:12})}
+  if(parts.has('B'))for(const s of pickLines(4,5,12,used)){used.add(s);items.push({part:'B',label:'Nghe & nhắc lại',text:s,limit:10})}
+  if(parts.has('C'))for(const s of pickLines(3,6,12,used)){used.add(s);const ch=splitThree(s);const sh=ch.slice();shuffle(sh,mulberry(s.length));if(sh.join()===ch.join())sh.reverse();items.push({part:'C',label:'Ghép câu',text:s,chunks:sh,limit:12})}
+  if(parts.has('D')){
+    let qs=null;
+    if(sample){try{qs=await sample.json(`Based on this English conversation, write 5 very simple questions for a spoken test, each answerable with ONE or TWO words that appear in or follow obviously from the conversation. Reply with only a JSON array of {"q": string, "a": [string, ...]} where "a" lists accepted answers in lowercase.\n\n${turns.slice(0,14).map(t=>t.text).join(' ')}`,{modelTier:'quick'});if(!Array.isArray(qs)||!qs.length||!qs[0].q)qs=null}catch(e){qs=null}}
+    if(!qs){const r=mulberry(Date.now()%7777);const c=SHORT_QS.slice();shuffle(c,r);qs=c.slice(0,5)}
+    for(const x of qs.slice(0,5))items.push({part:'D',label:'Trả lời ngắn',text:String(x.q),answers:(x.a||[]).map(s=>String(s).toLowerCase()),limit:6})
+  }
+  return items;
+}
+function listenTimed(limit,bar,onInterim){const p=listenAsync(onInterim);bar.style.transition=`width ${limit}s linear`;requestAnimationFrame(()=>bar.style.width='100%');const t=setTimeout(()=>{if(rec){try{rec.stop()}catch(e){}}},limit*1000);return p.finally(()=>clearTimeout(t))}
+async function examStart(){
+  const parts=new Set([...document.querySelectorAll('#exparts button')].filter(b=>b.getAttribute('aria-pressed')==='true').map(b=>b.dataset.p));
+  if(!parts.size||!turns.length)return;
+  exRun=true;$('#exstart').hidden=true;$('#exstop').hidden=false;$('#exam').innerHTML='<p class="hint">Đang chuẩn bị đề…</p>';
+  exItems=await buildExam(parts);exIdx=0;if(!exRun)return;
+  $('#exam').innerHTML='';for(const it of exItems){it.score=null}
+  await examStep();
+}
+function examStop(){exRun=false;try{speechSynthesis.cancel()}catch(e){}if(rec){try{rec.stop()}catch(e){}}$('#exstart').hidden=false;$('#exstop').hidden=true}
+async function examStep(){
+  if(!exRun)return;
+  if(exIdx>=exItems.length){examStop();examSummary();return}
+  const it=exItems[exIdx];const n=exIdx+1;
+  const box=document.createElement('div');box.className='exq cur';
+  box.innerHTML=`<div class="eyebrow"><span>Phần ${it.part} · ${it.label}</span><span>${n}/${exItems.length}</span></div><div class="prompt"></div><div class="state"></div><div class="bar"><i></i></div>`;
+  $('#exam').appendChild(box);box.scrollIntoView({block:'nearest'});
+  const prompt=box.querySelector('.prompt'),st=box.querySelector('.state'),bar=box.querySelector('.bar i');
+  // present
+  if(it.part==='A'){prompt.textContent=it.text;st.textContent='Đọc câu trên.';await speakAsync('Please read the sentence.',1)}
+  else if(it.part==='B'){prompt.textContent='🔊 …';st.textContent='Nghe rồi nhắc lại y hệt.';await speakAsync(it.text,0.95)}
+  else if(it.part==='C'){prompt.innerHTML=it.chunks.map(c=>`<span class="chip">${esc(c)}</span>`).join('');st.textContent='Sắp lại thành câu đúng và nói ra.';for(const c of it.chunks){await speakAsync(c,0.95);if(!exRun)return;await new Promise(r=>setTimeout(r,350))}}
+  else {prompt.textContent='🔊 …';st.textContent='Trả lời bằng một hoặc hai từ.';await speakAsync(it.text,0.95)}
+  if(!exRun)return;
+  // listen
+  let heard='';
+  try{heard=await listenTimed(it.limit,bar,h=>{st.textContent='🎤 '+h})}
+  catch(e){st.textContent=e==='denied'?'Không có quyền micro. Mở bằng Chrome trên GitHub Pages/Vercel và bấm Allow.':'Không mở được micro.';examStop();return}
+  if(!exRun)return;
+  // grade
+  let score=0;
+  if(it.part==='A'||it.part==='B'){const r=markWords(it.text,heard);prompt.innerHTML=r.html;score=r.n?Math.round(100*r.ok/r.n):0}
+  else if(it.part==='C'){score=orderScore(it.text,heard);const r=markWords(it.text,heard);prompt.innerHTML=r.html;score=Math.round((score+Math.round(100*r.ok/Math.max(1,r.n)))/2)}
+  else {const H=norm(heard).join(' ');const hit=it.answers.some(a=>a&&(' '+H+' ').includes(' '+a.toLowerCase()+' '));score=hit?100:0;prompt.textContent=it.text+'  →  '+(it.answers[0]||'')}
+  it.score=score;it.heard=heard;
+  box.classList.remove('cur');box.classList.add(score>=70?'ok':'bad');
+  st.textContent=(heard?`Máy nghe: “${heard}” · `:'Không nghe thấy gì · ')+score+'%';
+  exIdx++;await new Promise(r=>setTimeout(r,900));return examStep();
+}
+function examSummary(){
+  const byPart={};for(const it of exItems){(byPart[it.part]=byPart[it.part]||[]).push(it.score||0)}
+  const avg=a=>Math.round(a.reduce((x,y)=>x+y,0)/a.length);const all=exItems.map(i=>i.score||0);
+  const labels={A:'Đọc to',B:'Nghe & nhắc lại',C:'Ghép câu',D:'Trả lời ngắn'};
+  const d=document.createElement('div');d.className='exsum';
+  d.innerHTML=`<div style="font-family:var(--serif);font-size:20px;font-weight:600">Tổng: <b>${avg(all)}%</b></div>`+Object.keys(byPart).map(p=>`<div>${labels[p]}: <b>${avg(byPart[p])}%</b> (${byPart[p].length} câu)</div>`).join('')+`<div class="hint" style="margin:8px 0 0">Đây là điểm theo độ chính xác máy nghe được, không quy đổi sang thang Versant. Dưới 70% ở phần nào thì quay lại tab Đọc theo AI luyện phần đó.</div>`;
+  $('#exam').appendChild(d);d.scrollIntoView({block:'nearest'});
+}
+$('#exparts').onclick=e=>{const b=e.target.closest('button');if(!b)return;b.setAttribute('aria-pressed',b.getAttribute('aria-pressed')!=='true')};
+$('#exstart').onclick=examStart;$('#exstop').onclick=examStop;
 
 // ---- 6. coach: AI reads a chunk, learner repeats, mismatches are corrected before moving on ----
 let coachRun=false,coachIdx=0,coachChunks=[],coachTries=0;
