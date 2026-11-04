@@ -222,7 +222,7 @@ details.panel>summary{font-weight:500;color:var(--fg);font-size:14px}
     </section>
 
     <section class="view" id="v-shadow" hidden>
-      <div class="toolbar"><span class="hint" style="margin:0">Mở video ở mốc giờ, nghe 1 câu, dừng, nhại y hệt ngữ điệu. Đánh dấu mỗi lần lặp, mục tiêu 3 lần/câu.</span></div>
+      <div class="toolbar"><span class="hint" style="margin:0">Mở video ở mốc giờ, nghe 1 câu, dừng, nhại y hệt ngữ điệu. Đánh dấu mỗi lần lặp, mục tiêu 3 lần/câu.</span><button class="small" id="shadowall">Tất cả câu</button></div>
       <div class="shadow" id="shadow"></div>
     </section>
 
@@ -232,6 +232,7 @@ details.panel>summary{font-weight:500;color:var(--fg);font-size:14px}
         <label style="margin:0;text-transform:none;letter-spacing:0;font-size:13px">Câu: <select id="cline" style="font:inherit;max-width:60vw"></select></label>
         <button class="primary small" id="cstart">Bắt đầu</button>
         <button class="small" id="cstop" hidden>Dừng</button>
+        <button class="small" data-mictest="#micout2">Kiểm tra micro</button><span class="hint" id="micout2" style="margin:0"></span>
         <span class="hint" style="margin:0">Tốc độ: <select id="crate" style="font:inherit"><option value="0.75">chậm</option><option value="0.9" selected>vừa</option><option value="1">tự nhiên</option></select></span>
       </div>
       <div class="coach" id="coach"></div>
@@ -244,6 +245,7 @@ details.panel>summary{font-weight:500;color:var(--fg);font-size:14px}
       <div id="exlearn">
         <p class="hint" style="margin:0 0 12px">Bốn dạng nói của Versant. Mỗi câu: bấm 🔊 nghe mẫu bao nhiêu lần tuỳ ý → 🎤 nói → xem từ xanh/đỏ → làm lại đến khi ≥ 90%. Câu lấy từ bộ luyện có sẵn + bài bạn đang học.</p>
         <div class="toolbar"><span class="seg" id="lparts"><button class="small" data-p="A" aria-pressed="true">A · Đọc to</button><button class="small" data-p="B" aria-pressed="false">B · Nghe &amp; nhắc lại</button><button class="small" data-p="C" aria-pressed="false">C · Ghép câu</button><button class="small" data-p="D" aria-pressed="false">D · Trả lời ngắn</button></span></div>
+        <div class="toolbar"><button class="small" data-mictest="#micout1">Kiểm tra micro</button><span class="hint" id="micout1" style="margin:0"></span></div>
         <div class="hint" id="lguide" style="margin:0 0 12px"></div>
         <div class="exam" id="learn"></div>
       </div>
@@ -556,7 +558,7 @@ async function examStep(){
   // listen
   let heard='';
   try{heard=await listenTimed(it.limit,bar,h=>{st.textContent='🎤 '+h})}
-  catch(e){st.textContent=e==='denied'?'Không có quyền micro. Mở bằng Chrome trên GitHub Pages/Vercel và bấm Allow.':'Không mở được micro.';examStop();return}
+  catch(e){st.textContent=micMsg(e);examStop();return}
   if(!exRun)return;
   // grade
   let score=0;
@@ -594,7 +596,8 @@ function renderLearn(){
   $('#lguide').textContent=GUIDES[lpart];
   const items=[];
   if(lpart==='D'){for(const x of PRACTICE.D)items.push({part:'D',text:x.q,answers:x.a})}
-  else{const extra=lpart==='A'?pickLines(4,6,16):lpart==='B'?pickLines(4,5,12):pickLines(3,6,12);for(const s of [...PRACTICE[lpart],...extra]){const it={part:lpart,text:s};if(lpart==='C'){const ch=splitThree(s);const sh=ch.slice();shuffle(sh,mulberry(s.length));if(sh.join()===ch.join())sh.reverse();it.chunks=sh}items.push(it)}}
+  else{const rng=lpart==='A'?[5,22]:lpart==='B'?[4,14]:[6,14];const mine=turns.map(t=>t.text).filter(t=>{const k=t.split(/\s+/).length;return k>=rng[0]&&k<=rng[1]});for(const s of [...mine,...PRACTICE[lpart]]){const it={part:lpart,text:s};if(lpart==='C'){const ch=splitThree(s);const sh=ch.slice();shuffle(sh,mulberry(s.length));if(sh.join()===ch.join())sh.reverse();it.chunks=sh}items.push(it)}}
+  $('#lguide').textContent+=` — ${items.length} câu (${lpart==='D'?items.length:items.length-PRACTICE[lpart].length} từ bài này).`;
   $('#learn').innerHTML=items.map((it,i)=>`<div class="exq" data-i="${i}"><div class="eyebrow"><span>${i+1}</span><span class="best"></span></div><div class="prompt">${it.part==='C'?it.chunks.map(c=>`<span class="chip">${esc(c)}</span>`).join(''):it.part==='D'?esc(it.text):esc(it.text)}</div><div class="state"></div><div class="cbtns" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"><button class="small" data-hear>🔊 Nghe</button><button class="small mic" data-say style="width:auto;border-radius:6px;font-size:13px">🎤 Nói</button>${it.part!=='A'?'<button class="small" data-hint>Gợi ý</button>':''}</div></div>`).join('');
   $('#learn')._items=items;
 }
@@ -605,9 +608,9 @@ $('#learn').onclick=async e=>{
   if(b.hasAttribute('data-hint')){if(it.part==='C')st.textContent='Câu đúng: '+it.text;else if(it.part==='D')st.textContent='Trả lời: '+it.answers[0];else st.textContent=it.text;return}
   if(rec){try{rec.stop()}catch(x){}return}
   b.classList.add('on');st.textContent='🎤 Đang nghe…';let heard='';
-  try{heard=await listenAsync(h=>{st.textContent='🎤 '+h})}catch(err){b.classList.remove('on');st.textContent=err==='denied'?'Không có quyền micro. Mở bằng Chrome trên GitHub Pages/Vercel và bấm Allow.':'Không mở được micro.';return}
+  try{heard=await listenAsync(h=>{st.textContent='🎤 '+h})}catch(err){b.classList.remove('on');st.textContent=micMsg(err);return}
   b.classList.remove('on');
-  if(!heard){st.textContent='Không nghe thấy gì, thử lại.';return}
+  if(!heard){st.textContent='Máy không nhận ra lời nào (im lặng hoặc quá nhỏ). Bấm "Kiểm tra micro" ở trên để xem máy có thu được tiếng không.';return}
   let score;
   if(it.part==='D'){const H=norm(heard).join(' ');score=it.answers.some(a=>(' '+H+' ').includes(' '+a.toLowerCase()+' '))?100:0;st.textContent=`Máy nghe: “${heard}” → ${score?'✓ đúng':'✗ chưa đúng'}`}
   else{const r=markWords(it.text,heard);const w=r.n?Math.round(100*r.ok/r.n):0;score=it.part==='C'?Math.round((w+orderScore(it.text,heard))/2):w;if(it.part==='C')prompt.innerHTML=r.html;else prompt.innerHTML=r.html;st.textContent=`Máy nghe: “${heard}” · ${score}%`+(score<90?' — đọc lại, nhấn rõ từ đỏ.':' — tốt!')}
@@ -630,8 +633,27 @@ function speakAsync(text,rate){return new Promise(res=>{try{if(!('speechSynthesi
 function listenAsync(onInterim){return new Promise((res,rej)=>{const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR)return rej('nosr');if(rec){try{rec.stop()}catch(e){}}
   const r=new SR();rec=r;r.lang='en-US';r.interimResults=true;r.continuous=false;let heard='',err=null;
   r.onresult=ev=>{heard='';for(const x of ev.results)heard+=x[0].transcript;onInterim&&onInterim(heard)};
-  r.onerror=ev=>{err=ev.error};r.onend=()=>{if(rec===r)rec=null;if(err==='not-allowed'||err==='service-not-allowed')rej('denied');else res(heard.trim())};
+  r.onerror=ev=>{err=ev.error};r.onend=()=>{if(rec===r)rec=null;if(err==='not-allowed'||err==='service-not-allowed')rej('denied');else if(err&&err!=='no-speech'&&err!=='aborted'&&!heard)rej(err);else res(heard.trim())};
   try{r.start()}catch(e){rec=null;rej('start')}})}
+const MIC_MSG={denied:'Chrome chưa cho trang dùng micro: bấm biểu tượng 🔒/🎤 cạnh địa chỉ web → Microphone → Allow, rồi tải lại.',
+  'audio-capture':'Không có micro hoặc micro đang bị tắt. Kiểm tra Windows: Settings → System → Sound → Input, chọn đúng micro và nói thử xem thanh âm lượng có nhảy không.',
+  network:'Không kết nối được dịch vụ nhận dạng giọng nói của Chrome (cần Internet; một số mạng/VPN chặn). Thử đổi mạng hoặc tắt VPN.',
+  'language-not-supported':'Trình duyệt không hỗ trợ nhận dạng tiếng Anh. Dùng Google Chrome hoặc Edge.',
+  nosr:'Trình duyệt không có nhận dạng giọng nói. Dùng Google Chrome hoặc Edge.',start:'Không mở được micro, tải lại trang rồi thử lại.'};
+function micMsg(e){return MIC_MSG[e]||('Lỗi micro: '+e)}
+// mic test: shows the live input level so the person can see whether sound is being captured
+async function micTest(btn,out){
+  if(btn.dataset.on){btn.dataset.on='';btn.textContent='Kiểm tra micro';if(btn._stop)btn._stop();return}
+  try{
+    const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+    const ctx=new (window.AudioContext||window.webkitAudioContext)();const src=ctx.createMediaStreamSource(stream);const an=ctx.createAnalyser();an.fftSize=512;src.connect(an);const buf=new Uint8Array(an.fftSize);
+    const label=(stream.getAudioTracks()[0]||{}).label||'micro';out.innerHTML=`Đang thu từ: <b>${esc(label)}</b> — hãy nói vài câu: <span class="bar" style="display:inline-block;width:160px;vertical-align:middle"><i></i></span> <span class="lv">0</span>`;
+    const bar=out.querySelector('i'),lv=out.querySelector('.lv');bar.style.transition='width .08s';let peak=0,raf;
+    const tick=()=>{an.getByteTimeDomainData(buf);let s=0;for(const v of buf){const d=(v-128)/128;s+=d*d}const rms=Math.sqrt(s/buf.length);const pct=Math.min(100,Math.round(rms*400));peak=Math.max(peak,pct);bar.style.width=pct+'%';lv.textContent=pct+'%'+(peak<5?' (chưa thấy tín hiệu)':peak<25?' (hơi nhỏ, nói to hơn)':' (ổn)');raf=requestAnimationFrame(tick)};tick();
+    btn.dataset.on='1';btn.textContent='Dừng kiểm tra';btn._stop=()=>{cancelAnimationFrame(raf);stream.getTracks().forEach(t=>t.stop());ctx.close();out.textContent='Đã dừng kiểm tra.'};
+  }catch(e){out.textContent=e&&e.name==='NotAllowedError'?MIC_MSG.denied:e&&e.name==='NotFoundError'?MIC_MSG['audio-capture']:'Không mở được micro: '+(e&&e.message||e)}
+}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-mictest]');if(b)micTest(b,$(b.dataset.mictest))});
 function markWords(target,heard){const H=new Set(norm(heard));let ok=0,n=0,bad=[];const html=target.split(/(\s+)/).map(w=>{if(/^\s*$/.test(w))return w;const k=w.toLowerCase().replace(/[^a-z']/g,'');if(!k)return esc(w);n++;const hit=H.has(k);if(hit)ok++;else bad.push(k);return `<span class="${hit?'wok':'wbad'}">${esc(w)}</span>`}).join('');return {html,ok,n,bad}}
 function renderCoach(){
   const sel=$('#cline');sel.innerHTML=turns.map((t,i)=>`<option value="${i}">${esc((t.name+': '+t.text).slice(0,70))}${t.text.length>60?'…':''}</option>`).join('');
@@ -654,7 +676,7 @@ async function coachStep(){
   st.textContent='🎤 Đến lượt bạn, đọc cụm này…';
   let heard='';
   try{heard=await listenAsync(h=>{st.textContent='Nghe được: '+h})}
-  catch(e){st.textContent=e==='denied'?'Trình duyệt không cho dùng micro. Mở trang trên GitHub Pages/Vercel bằng Chrome và bấm Allow.':e==='nosr'?'Trình duyệt không có nhận dạng giọng nói. Dùng Chrome hoặc Edge.':'Không mở được micro.';box.querySelector('.cbtns').hidden=false;return}
+  catch(e){st.textContent=micMsg(e);box.querySelector('.cbtns').hidden=false;return}
   if(!coachRun)return;
   if(!heard){st.textContent='Không nghe thấy gì. Nói to hơn một chút nhé.';coachTries++;box.querySelector('.cbtns').hidden=false;if(coachTries<3)return coachStep();return}
   const r=markWords(text,heard);box.querySelector('.ctext').innerHTML=r.html;
@@ -758,8 +780,10 @@ function renderCloze(){
     return `<div class="cloze ${t.spk?'b':'a'}"><p><span class="who">${esc(t.name)}</span>${html}</p></div>`}).join('');
   $('#score').textContent='';
 }
+let shadowAll=false;
 function renderShadow(){
-  const c=turns.filter(t=>{const n=t.text.split(/\s+/).length;return n>=6&&n<=16}).sort((a,b)=>Math.abs(a.text.split(/\s+/).length-10)-Math.abs(b.text.split(/\s+/).length-10)).slice(0,10).sort((a,b)=>a.start-b.start);
+  const c=shadowAll?turns.slice():turns.filter(t=>{const n=t.text.split(/\s+/).length;return n>=6&&n<=16}).sort((a,b)=>Math.abs(a.text.split(/\s+/).length-10)-Math.abs(b.text.split(/\s+/).length-10)).slice(0,10).sort((a,b)=>a.start-b.start);
+  $('#shadowall').textContent=shadowAll?'Chỉ 10 câu chọn lọc':'Tất cả '+turns.length+' câu';
   $('#shadow').innerHTML=c.map(t=>{const u=ytAt(t.start);return `<div class="sline" data-text="${esc(t.text)}"><div class="t">${u?`<a href="${u}" target="_blank" rel="noopener">▶ ${fmt(t.start)}</a>`:`<span style="font-family:var(--mono);font-size:13px;color:var(--muted)">${fmt(t.start)}</span>`}<br><button class="spk small" type="button" aria-label="Nghe máy đọc">🔊</button></div><div><p>${esc(t.text)}</p><div class="reps"><button aria-label="lần 1">1</button><button aria-label="lần 2">2</button><button aria-label="lần 3">3</button><button class="mic small readmic" type="button" aria-label="Đọc và kiểm tra">🎤 Đọc thử</button></div><div class="heard" hidden></div></div></div>`}).join('')||'<p class="empty">Chưa có câu nào đủ ngắn để luyện.</p>';
 }
 function showView(v){document.querySelectorAll('.tabs [role=tab]').forEach(b=>b.setAttribute('aria-selected',b.dataset.v===v));document.querySelectorAll('section.view').forEach(s=>s.hidden=s.id!=='v-'+v)}
@@ -787,6 +811,7 @@ $('#copyvocab').onclick=e=>{const txt=vb.filter(v=>!known.has(v.w)).map(v=>`${v.
 $('#check').onclick=()=>{let ok=0;document.querySelectorAll('#cloze input').forEach(i=>{const good=i.value.trim().toLowerCase()===clozeAns[+i.dataset.i].toLowerCase();i.classList.toggle('ok',good);i.classList.toggle('bad',!good&&i.value.trim()!=='');if(good)ok++});$('#score').textContent=`${ok}/${clozeAns.length} đúng`};
 $('#reveal').onclick=()=>{document.querySelectorAll('#cloze input').forEach(i=>{i.value=clozeAns[+i.dataset.i];i.classList.add('ok');i.classList.remove('bad')});$('#score').textContent=''};
 $('#reshuffle').onclick=()=>{seed++;renderCloze()};
+$('#shadowall').onclick=()=>{shadowAll=!shadowAll;renderShadow()};
 $('#shadow').onclick=e=>{const b=e.target.closest('.reps button');if(b)b.classList.toggle('done')};
 $('#raw').addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='Enter')build()});
 
