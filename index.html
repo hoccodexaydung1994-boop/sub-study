@@ -380,9 +380,9 @@ function parse(raw){
   const out=[];
   for(const s of segs){
     const sents=s.text.split(/(?<=[.?!…])\s+(?=["'(A-Z])/).filter(Boolean);
-    if(sents.length<2){out.push(s);continue}
+    if(sents.length<2){s.nl=true;out.push(s);continue}
     const total=sents.reduce((n,x)=>n+x.length,0),span=Math.max(s.end-s.start,sents.length*2);let t=s.start;
-    for(const x of sents){const d=span*x.length/total;out.push({start:t,end:t+d,text:x,who:s.who});t+=d}
+    sents.forEach((x,i)=>{const d=span*x.length/total;out.push({start:t,end:t+d,text:x,who:s.who,nl:i===0});t+=d})
   }
   return out.filter(s=>s.text&&!/^\[.*\]$/.test(s.text));
 }
@@ -398,7 +398,7 @@ function toTurns(segs,gap){
       turns.push({spk:idx,name:s.who,start:s.start,text:s.text});return}
     if(i===0){turns.push({spk,start:s.start,text:s.text});return}
     const prev=segs[i-1];
-    if(s.start-prev.end>=gap||/\?\s*$/.test(prev.text)){spk=1-spk;turns.push({spk,start:s.start,text:s.text})}
+    if(s.start-prev.end>=gap||/\?\s*$/.test(prev.text)||(s.nl&&/[.!?…]\s*$/.test(prev.text))){spk=1-spk;turns.push({spk,start:s.start,text:s.text})}
     else turns[turns.length-1].text+=' '+s.text;
   });
   return turns;
@@ -727,12 +727,11 @@ const SOUND_TIPS_EN={'th /θ/ /ð/':'Tongue tip lightly between the teeth, push 
 function localTip(word){const w=word.toLowerCase();const hits=SOUND_TIPS.filter(([re])=>re.test(w)).slice(0,3);
   if(wLang==='en')return (hits.length?hits.map(([,l])=>`• ${l}: ${SOUND_TIPS_EN[l]||''}`).join('\n'):'• Say it slowly, sound by sound, with a clear ending, then join them at normal speed.')+'\n• Stress: listen to the model and copy the syllable that is louder and longer.';
   return (hits.length?hits.map(([,l,t])=>`• ${l}: ${t}`).join('\n'):'• Đọc chậm, tách từng âm, nhấn rõ âm cuối rồi ghép lại ở tốc độ thường.')+'\n• Trọng âm: nghe mẫu và bắt chước âm nào được nhấn mạnh, kéo dài nhất.'}
-let wcur={word:'',sent:''},wTipCache={},wRun=false,wLang=store.get('coachLang','en');
+let wcur={word:'',sent:''},wTipCache={},wRun=false,wLang=store.get('coachLang','en'),viWarned=false;
 function setLang(l){wLang=l;store.set('coachLang',l);[...$('#wlang').children].forEach(b=>b.setAttribute('aria-pressed',b.dataset.l===l));wTipCache={};viWarned=false;if(l==='vi'){if(!voices.length)loadVoices();if(voices.length&&!voices.some(v=>/^vi/i.test(v.lang)))noViVoice()}}
 $('#wlang').onclick=e=>{const b=e.target.closest('button');if(!b)return;setLang(b.dataset.l);if(wcur.word){const w=wcur.word,st=wcur.sent;coachStopWord();openWord(w,st)}};
 setLang(wLang);
 function speakVi(text){return new Promise(res=>{try{if(!('speechSynthesis'in window)||!$('#speak').checked)return res();speechSynthesis.cancel();setTimeout(()=>{const u=new SpeechSynthesisUtterance(text);const en=wLang==='en';u.lang=en?'en-GB':'vi-VN';u.rate=en?0.95:1.05;if(!voices.length)loadVoices();const v=en?(voices.find(v=>/^en[-_]GB/i.test(v.lang))||voices.find(v=>/^en/i.test(v.lang))):voices.find(v=>/^vi/i.test(v.lang));if(v)u.voice=v;else if(!en){noViVoice();return res()}let done=false;const fin=()=>{if(!done){done=true;res()}};u.onend=fin;u.onerror=fin;setTimeout(fin,Math.max(2500,text.length*90));speechSynthesis.speak(u)},60)}catch(e){res()}})}
-let viWarned=false;
 function noViVoice(){if(viWarned)return;viWarned=true;const d=document.createElement('div');d.className='l ai';d.style.borderLeft='3px solid var(--bad)';d.textContent='Máy này chưa có giọng đọc tiếng Việt nên lời của giáo viên chỉ hiện chữ. Windows: Settings → Time & language → Speech → Add voices → Vietnamese, rồi mở lại Chrome. Hoặc chuyển sang English ở góc trên.';$('#wlog').appendChild(d)}
 function wlog(cls,text){const d=document.createElement('div');d.className='l '+cls;d.textContent=text;document.querySelectorAll('#wlog .now').forEach(x=>x.classList.remove('now'));if(cls==='ai')d.classList.add('now');$('#wlog').appendChild(d);d.scrollIntoView({block:'nearest'});return d}
 async function aiSay(text){wlog('ai',text);await speakVi(text)}
