@@ -171,11 +171,12 @@ details.panel>summary{font-weight:500;color:var(--fg);font-size:14px}
 
   <details class="panel" id="aipanel" style="margin-bottom:14px">
     <summary id="aistatus">Kết nối AI (chưa có khoá API)</summary>
-    <div class="row" style="margin-top:12px">
-      <div class="field"><label for="apikey">Khoá API Anthropic (lưu trong trình duyệt này)</label><input id="apikey" type="password" placeholder="sk-ant-…" autocomplete="off"></div>
+    <div class="toolbar" style="margin-top:12px"><span class="hint" style="margin:0">Nhà cung cấp:</span><span class="seg" id="provider"><button class="small" data-p="anthropic" aria-pressed="true">Anthropic (Claude)</button><button class="small" data-p="openai" aria-pressed="false">OpenAI (ChatGPT)</button></span></div>
+    <div class="row">
+      <div class="field"><label for="apikey" id="keylabel">Khoá API (lưu trong trình duyệt này)</label><input id="apikey" type="password" placeholder="sk-…" autocomplete="off"></div>
       <div class="field"><label for="model">Model</label><input id="model" type="text" value="claude-haiku-5-5"></div>
     </div>
-    <div class="toolbar"><button class="primary small" id="savekey">Lưu</button><button class="small" id="clearkey">Xoá khoá</button><span class="hint" style="margin:0">Lấy khoá tại console.anthropic.com. Khoá chỉ nằm trong trình duyệt của bạn; không ghi khoá vào file HTML.</span></div>
+    <div class="toolbar"><button class="primary small" id="savekey">Lưu</button><button class="small" id="clearkey">Xoá khoá</button><span class="hint" style="margin:0" id="keyhint">Lấy khoá tại console.anthropic.com. Khoá chỉ nằm trong trình duyệt của bạn; không ghi khoá vào file HTML.</span></div>
   </details>
 
   <div class="lib">
@@ -727,10 +728,12 @@ function localTip(word){const w=word.toLowerCase();const hits=SOUND_TIPS.filter(
   if(wLang==='en')return (hits.length?hits.map(([,l])=>`• ${l}: ${SOUND_TIPS_EN[l]||''}`).join('\n'):'• Say it slowly, sound by sound, with a clear ending, then join them at normal speed.')+'\n• Stress: listen to the model and copy the syllable that is louder and longer.';
   return (hits.length?hits.map(([,l,t])=>`• ${l}: ${t}`).join('\n'):'• Đọc chậm, tách từng âm, nhấn rõ âm cuối rồi ghép lại ở tốc độ thường.')+'\n• Trọng âm: nghe mẫu và bắt chước âm nào được nhấn mạnh, kéo dài nhất.'}
 let wcur={word:'',sent:''},wTipCache={},wRun=false,wLang=store.get('coachLang','en');
-function setLang(l){wLang=l;store.set('coachLang',l);[...$('#wlang').children].forEach(b=>b.setAttribute('aria-pressed',b.dataset.l===l));wTipCache={}}
+function setLang(l){wLang=l;store.set('coachLang',l);[...$('#wlang').children].forEach(b=>b.setAttribute('aria-pressed',b.dataset.l===l));wTipCache={};viWarned=false;if(l==='vi'){if(!voices.length)loadVoices();if(voices.length&&!voices.some(v=>/^vi/i.test(v.lang)))noViVoice()}}
 $('#wlang').onclick=e=>{const b=e.target.closest('button');if(!b)return;setLang(b.dataset.l);if(wcur.word){const w=wcur.word,st=wcur.sent;coachStopWord();openWord(w,st)}};
 setLang(wLang);
-function speakVi(text){return new Promise(res=>{try{if(!('speechSynthesis'in window)||!$('#speak').checked)return res();speechSynthesis.cancel();setTimeout(()=>{const u=new SpeechSynthesisUtterance(text);const en=wLang==='en';u.lang=en?'en-GB':'vi-VN';u.rate=en?0.95:1.05;if(!voices.length)loadVoices();const v=en?(voices.find(v=>/^en[-_]GB/i.test(v.lang))||voices.find(v=>/^en/i.test(v.lang))):voices.find(v=>/^vi/i.test(v.lang));if(v)u.voice=v;else if(!en){u.lang='en-GB'}let done=false;const fin=()=>{if(!done){done=true;res()}};u.onend=fin;u.onerror=fin;setTimeout(fin,Math.max(2500,text.length*90));speechSynthesis.speak(u)},60)}catch(e){res()}})}
+function speakVi(text){return new Promise(res=>{try{if(!('speechSynthesis'in window)||!$('#speak').checked)return res();speechSynthesis.cancel();setTimeout(()=>{const u=new SpeechSynthesisUtterance(text);const en=wLang==='en';u.lang=en?'en-GB':'vi-VN';u.rate=en?0.95:1.05;if(!voices.length)loadVoices();const v=en?(voices.find(v=>/^en[-_]GB/i.test(v.lang))||voices.find(v=>/^en/i.test(v.lang))):voices.find(v=>/^vi/i.test(v.lang));if(v)u.voice=v;else if(!en){noViVoice();return res()}let done=false;const fin=()=>{if(!done){done=true;res()}};u.onend=fin;u.onerror=fin;setTimeout(fin,Math.max(2500,text.length*90));speechSynthesis.speak(u)},60)}catch(e){res()}})}
+let viWarned=false;
+function noViVoice(){if(viWarned)return;viWarned=true;const d=document.createElement('div');d.className='l ai';d.style.borderLeft='3px solid var(--bad)';d.textContent='Máy này chưa có giọng đọc tiếng Việt nên lời của giáo viên chỉ hiện chữ. Windows: Settings → Time & language → Speech → Add voices → Vietnamese, rồi mở lại Chrome. Hoặc chuyển sang English ở góc trên.';$('#wlog').appendChild(d)}
 function wlog(cls,text){const d=document.createElement('div');d.className='l '+cls;d.textContent=text;document.querySelectorAll('#wlog .now').forEach(x=>x.classList.remove('now'));if(cls==='ai')d.classList.add('now');$('#wlog').appendChild(d);d.scrollIntoView({block:'nearest'});return d}
 async function aiSay(text){wlog('ai',text);await speakVi(text)}
 function coachLine(kind,word,heard,tries){
@@ -1095,21 +1098,35 @@ fetch('lessons.json',{cache:'no-store'}).then(r=>r.ok?r.json():null).then(arr=>{
 }).catch(()=>{});
 
 // ---- AI via the Anthropic API, using your own key (stored only in this browser) ----
-const API='https://api.anthropic.com/v1/messages';
-function key(){return store.get('apikey','')}
-function model(){return store.get('model','claude-haiku-5-5')}
-function aiStatus(){const k=key();$('#aistatus').textContent=k?'Kết nối AI: đã có khoá · '+model():'Kết nối AI (chưa có khoá API)';$('#apikey').value=k;$('#model').value=model();sample=k?realSample:null;$('#chatnote').textContent=k?'':'Chế độ có AI cần khoá API: mở "Kết nối AI" ở đầu trang.'}
-$('#savekey').onclick=()=>{store.set('apikey',$('#apikey').value.trim());store.set('model',$('#model').value.trim()||'claude-haiku-5-5');aiStatus();$('#aipanel').open=false};
-$('#clearkey').onclick=()=>{store.set('apikey','');aiStatus()};
+const PROVIDERS={
+  anthropic:{name:'Anthropic (Claude)',url:'https://api.anthropic.com/v1/messages',defModel:'claude-haiku-5-5',hint:'Lấy khoá tại console.anthropic.com (bắt đầu bằng sk-ant-). Khoá chỉ nằm trong trình duyệt của bạn; không ghi khoá vào file HTML.',ph:'sk-ant-…'},
+  openai:{name:'OpenAI (ChatGPT)',url:'https://api.openai.com/v1/chat/completions',defModel:'gpt-4o-mini',hint:'Lấy khoá tại platform.openai.com → API keys (bắt đầu bằng sk-). Cần nạp tiền trong Billing. Khoá chỉ nằm trong trình duyệt của bạn.',ph:'sk-…'},
+};
+function provider(){return store.get('provider','anthropic')}
+function key(){return store.get('apikey_'+provider(),'')}
+function model(){return store.get('model_'+provider(),PROVIDERS[provider()].defModel)}
+function aiStatus(){const P=PROVIDERS[provider()];const k=key();$('#aistatus').textContent=k?'Kết nối AI: '+P.name+' · '+model():'Kết nối AI (chưa có khoá API)';$('#apikey').value=k;$('#apikey').placeholder=P.ph;$('#model').value=model();$('#keyhint').textContent=P.hint;[...$('#provider').children].forEach(b=>b.setAttribute('aria-pressed',b.dataset.p===provider()));sample=k?realSample:null;$('#chatnote').textContent=k?'':'Chế độ có AI cần khoá API: mở "Kết nối AI" ở đầu trang.'}
+$('#provider').onclick=e=>{const b=e.target.closest('button');if(!b)return;store.set('provider',b.dataset.p);aiStatus()};
+$('#savekey').onclick=()=>{store.set('apikey_'+provider(),$('#apikey').value.trim());store.set('model_'+provider(),$('#model').value.trim()||PROVIDERS[provider()].defModel);aiStatus();$('#aipanel').open=false};
+$('#clearkey').onclick=()=>{store.set('apikey_'+provider(),'');aiStatus()};
+async function readSSE(res,onText,pick){const reader=res.body.getReader();const dec=new TextDecoder();let buf='',text='';
+  while(true){const {value,done}=await reader.read();if(done)break;buf+=dec.decode(value,{stream:true});const lines=buf.split('\n');buf=lines.pop();
+    for(const l of lines){if(!l.startsWith('data:'))continue;const body=l.slice(5).trim();if(body==='[DONE]')continue;try{const d=pick(JSON.parse(body));if(d){text+=d;onText({text,delta:d})}}catch(e){}}}
+  return {text,truncated:false}}
 async function callClaude(msgs,{signal,onText,maxTokens=400}={}){
-  const res=await fetch(API,{method:'POST',signal,headers:{'content-type':'application/json','x-api-key':key(),'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+  const P=PROVIDERS[provider()];let res;
+  if(provider()==='openai'){
+    res=await fetch(P.url,{method:'POST',signal,headers:{'content-type':'application/json','authorization':'Bearer '+key()},
+      body:JSON.stringify({model:model(),max_tokens:maxTokens,stream:!!onText,messages:msgs})});
+    if(!res.ok){const t=await res.text();throw {code:res.status===401?'not_granted':res.status===429?'rate_limited':'upstream_error',message:t}}
+    if(!onText){const j=await res.json();const c=j.choices&&j.choices[0];return {text:(c&&c.message&&c.message.content)||'',truncated:!!(c&&c.finish_reason==='length')}}
+    return readSSE(res,onText,ev=>ev.choices&&ev.choices[0]&&ev.choices[0].delta&&ev.choices[0].delta.content);
+  }
+  res=await fetch(P.url,{method:'POST',signal,headers:{'content-type':'application/json','x-api-key':key(),'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
     body:JSON.stringify({model:model(),max_tokens:maxTokens,stream:!!onText,messages:msgs})});
   if(!res.ok){const t=await res.text();throw {code:res.status===401?'not_granted':res.status===429?'rate_limited':'upstream_error',message:t}}
   if(!onText){const j=await res.json();return {text:(j.content||[]).map(c=>c.text||'').join(''),truncated:j.stop_reason==='max_tokens'}}
-  const reader=res.body.getReader();const dec=new TextDecoder();let buf='',text='';
-  while(true){const {value,done}=await reader.read();if(done)break;buf+=dec.decode(value,{stream:true});const lines=buf.split('\n');buf=lines.pop();
-    for(const l of lines){if(!l.startsWith('data:'))continue;try{const ev=JSON.parse(l.slice(5));if(ev.type==='content_block_delta'&&ev.delta&&ev.delta.text){text+=ev.delta.text;onText({text,delta:ev.delta.text})}}catch(e){}}}
-  return {text,truncated:false};
+  return readSSE(res,onText,ev=>ev.type==='content_block_delta'&&ev.delta&&ev.delta.text);
 }
 function toMsgs(input){const arr=typeof input==='string'?[{role:'user',content:input}]:input;const m=[];for(const t of arr){if(m.length&&m[m.length-1].role===t.role)m[m.length-1].content+='\n\n'+t.content;else m.push({role:t.role,content:t.content})}return m}
 async function realSample(input,opts={}){try{return await callClaude(toMsgs(input),opts)}catch(e){if(e.name==='AbortError')throw {code:'cancelled',message:''};throw e.code?e:{code:'upstream_error',message:String(e)}}}
