@@ -130,6 +130,11 @@ details.panel>summary{font-weight:500;color:var(--fg);font-size:14px}
 .wcard .wres{font-family:var(--serif);font-size:18px;min-height:1.5em}
 .wcard .wres .ok{color:var(--ok)}.wcard .wres .bad{color:var(--bad)}
 .wcard .wtip{font-size:14px;line-height:1.55;white-space:pre-wrap;margin-top:8px;padding:10px 12px;border-radius:8px;background:var(--accent-soft)}
+.wlog{display:grid;gap:6px;margin-top:8px}
+.wlog .l{padding:8px 12px;border-radius:10px;font-size:14px;line-height:1.5;max-width:92%}
+.wlog .l.ai{background:var(--accent-soft);justify-self:start;border-bottom-left-radius:4px}
+.wlog .l.me{background:var(--bg);border:1px solid var(--line);justify-self:end;border-bottom-right-radius:4px}
+.wlog .l.ai.now{outline:2px solid var(--accent)}
 .wcard .wctx{font-size:13px;color:var(--muted);margin-top:6px;font-style:italic}
 .coach{display:grid;gap:10px}
 .chunk{padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--panel);opacity:.55}
@@ -155,9 +160,10 @@ details.panel>summary{font-weight:500;color:var(--fg);font-size:14px}
 <div class="wcard" id="wcard" hidden>
   <div class="wh"><span class="ww" id="ww"></span><span class="ipa" id="wipa"></span><button class="wclose" id="wclose" aria-label="Đóng">✕</button></div>
   <div class="wctx" id="wctx"></div>
-  <div class="wbtns"><button class="small" id="wslow">🔊 Chậm</button><button class="small" id="wnorm">🔊 Bình thường</button><button class="small" id="wsent">🔊 Cả câu</button><button class="small mic" id="wmic" style="width:auto;border-radius:6px;font-size:13px">🎤 Đọc từ này</button></div>
+  <div class="wbtns"><button class="primary small" id="wcoach">▶ Luyện cùng AI</button><button class="small" id="wstop" hidden>■ Dừng</button><button class="small" id="wslow">🔊 Chậm</button><button class="small" id="wnorm">🔊 Bình thường</button><button class="small" id="wsent">🔊 Cả câu</button><button class="small mic" id="wmic" style="width:auto;border-radius:6px;font-size:13px">🎤 Tự đọc</button></div>
   <div class="wres" id="wres"></div>
-  <div class="wtip" id="wtip"></div>
+  <div class="wlog" id="wlog"></div>
+  <details style="margin-top:8px"><summary class="hint" style="margin:0">Phiên âm & hướng dẫn chi tiết</summary><div class="wtip" id="wtip"></div></details>
 </div>
 <div class="wrap">
   <h1>Sub Study</h1>
@@ -717,13 +723,61 @@ const SOUND_TIPS=[ // [regex on spelling, label, guidance] — generic articulat
   [/o[^aeiou]e$|oa|ow$/,'/oʊ/','Bắt đầu "o" rồi trượt sang "u", môi tròn dần.'],
 ];
 function localTip(word){const w=word.toLowerCase();const hits=SOUND_TIPS.filter(([re])=>re.test(w)).slice(0,3);return (hits.length?hits.map(([,l,t])=>`• ${l}: ${t}`).join('\n'):'• Đọc chậm, tách từng âm, nhấn rõ âm cuối rồi ghép lại ở tốc độ thường.')+'\n• Trọng âm: nghe mẫu và bắt chước âm nào được nhấn mạnh, kéo dài nhất.'}
-let wcur={word:'',sent:''},wTipCache={};
+let wcur={word:'',sent:''},wTipCache={},wRun=false;
+function speakVi(text){return new Promise(res=>{try{if(!('speechSynthesis'in window)||!$('#speak').checked)return res();speechSynthesis.cancel();setTimeout(()=>{const u=new SpeechSynthesisUtterance(text);u.lang='vi-VN';u.rate=1.05;if(!voices.length)loadVoices();const v=voices.find(v=>/^vi/i.test(v.lang));if(v)u.voice=v;else{u.lang='en-GB'}let done=false;const fin=()=>{if(!done){done=true;res()}};u.onend=fin;u.onerror=fin;setTimeout(fin,Math.max(2500,text.length*90));speechSynthesis.speak(u)},60)}catch(e){res()}})}
+function wlog(cls,text){const d=document.createElement('div');d.className='l '+cls;d.textContent=text;document.querySelectorAll('#wlog .now').forEach(x=>x.classList.remove('now'));if(cls==='ai')d.classList.add('now');$('#wlog').appendChild(d);d.scrollIntoView({block:'nearest'});return d}
+async function aiSay(text){wlog('ai',text);await speakVi(text)}
+function coachLine(kind,word,heard,tries){
+  const w=word;
+  if(kind==='intro')return `Mình luyện từ “${w}” nhé. Nghe mình đọc trước, rồi bạn đọc lại.`;
+  if(kind==='listen')return 'Đến bạn. Đọc từ này.';
+  if(kind==='ok')return tries===1?`Chuẩn rồi! “${w}” đúng ngay lần đầu.`:`Tốt, lần này đúng rồi. Đọc thêm một lần cho chắc.`;
+  if(kind==='ok2')return `Rất tốt. Giờ thử nói cả câu.`;
+  if(kind==='sentok')return `Xong. Cả câu đã rõ. Bạn có thể đóng thẻ hoặc chọn từ khác.`;
+  if(kind==='sentbad')return `Câu còn vấp. Mình đọc lại chậm, bạn nói theo.`;
+  if(kind==='silent')return 'Mình chưa nghe thấy gì. Nói to hơn, ngay sau tiếng bíp nhé.';
+  if(kind==='near')return `Gần đúng rồi, máy nghe thành “${heard}”. Để ý âm cuối và trọng âm. Nghe lại rồi thử nữa.`;
+  if(kind==='bad')return `Chưa đúng, máy nghe thành “${heard}”. Nghe mình đọc chậm nhé.`;
+  if(kind==='giveup')return `Mình đọc thêm một lần chậm. Bạn có thể bấm vào phần hướng dẫn chi tiết để xem cách đặt lưỡi.`;
+  return '';
+}
+function firstTipLine(word){const t=(wTipCache[word.toLowerCase()]||{}).tip||localTip(word);const l=t.split('\n').find(x=>x.trim());return l?l.replace(/^•\s*/,''):''}
+async function coachStartWord(){
+  if(wRun)return;wRun=true;$('#wcoach').hidden=true;$('#wstop').hidden=false;$('#wlog').innerHTML='';$('#wres').textContent='';
+  const word=wcur.word;let tries=0,okCount=0;
+  await aiSay(coachLine('intro',word));if(!wRun)return;
+  await speakAsync(word,0.6);await new Promise(r=>setTimeout(r,250));await speakAsync(word,0.95);if(!wRun)return;
+  while(wRun&&tries<4){
+    await aiSay(coachLine('listen',word));if(!wRun)return;
+    ding('good');let heard='';
+    try{heard=await listenAsync(h=>{$('#wres').textContent='🎤 '+h})}catch(err){await aiSay(micMsg(err));break}
+    if(!wRun)return;tries++;
+    if(!heard){await aiSay(coachLine('silent',word));continue}
+    wlog('me',heard);
+    const H=norm(heard),target=word.toLowerCase();const hit=H.includes(target);
+    const near=!hit&&H.some(x=>x.length>2&&(target.startsWith(x)||x.startsWith(target)||target.slice(-3)===x.slice(-3)));
+    if(hit){okCount++;ding('perfect');$('#wres').innerHTML=`<span class="ok">✓ ${esc(word)}</span>`;
+      if(okCount<2){await aiSay(coachLine('ok',word,heard,tries));continue}
+      await aiSay(coachLine('ok2',word));if(!wRun)return;
+      // sentence round
+      if(wcur.sent){await speakAsync(wcur.sent,0.9);if(!wRun)return;await aiSay('Đến bạn, nói cả câu.');ding('good');let h2='';try{h2=await listenAsync(h=>{$('#wres').textContent='🎤 '+h})}catch(e){break}if(!wRun)return;
+        if(h2){wlog('me',h2);const r=markWords(wcur.sent,h2);$('#wres').innerHTML=r.html;const pct=r.n?Math.round(100*r.ok/r.n):0;if(pct>=90){ding('perfect');await aiSay(coachLine('sentok',word))}else{await aiSay(coachLine('sentbad',word));await speakAsync(wcur.sent,0.7)}}}
+      break;}
+    $('#wres').innerHTML=`<span class="bad">✗</span> “${esc(heard)}”`;
+    if(near){await aiSay(coachLine('near',word,heard));await speakAsync(word,0.75)}
+    else{await aiSay(coachLine('bad',word,heard));await speakAsync(word,0.6);const tip=firstTipLine(word);if(tip&&tries===2){await aiSay(tip)}await speakAsync(word,0.95)}
+  }
+  if(wRun&&tries>=4&&okCount<2){await aiSay(coachLine('giveup',word));await speakAsync(word,0.6)}
+  wRun=false;$('#wcoach').hidden=false;$('#wstop').hidden=true;
+}
+function coachStopWord(){wRun=false;try{speechSynthesis.cancel()}catch(e){}if(rec){try{rec.stop()}catch(e){}}$('#wcoach').hidden=false;$('#wstop').hidden=true}
+$('#wcoach').onclick=coachStartWord;$('#wstop').onclick=coachStopWord;
 async function openWord(word,sent){
-  wcur={word,sent};const c=$('#wcard');c.hidden=false;$('#ww').textContent=word;$('#wipa').textContent='';$('#wctx').textContent=sent?'Trong câu: '+sent:'';$('#wres').textContent='';
+  coachStopWord();wcur={word,sent};const c=$('#wcard');c.hidden=false;$('#ww').textContent=word;$('#wipa').textContent='';$('#wctx').textContent=sent?'Trong câu: '+sent:'';$('#wres').textContent='';$('#wlog').innerHTML='';
   const key=word.toLowerCase();
-  if(wTipCache[key]){$('#wipa').textContent=wTipCache[key].ipa;$('#wtip').textContent=wTipCache[key].tip;say(word);return}
+  if(wTipCache[key]){$('#wipa').textContent=wTipCache[key].ipa;$('#wtip').textContent=wTipCache[key].tip;coachStartWord();return}
   $('#wtip').textContent=sample?'Đang hỏi AI cách phát âm…':localTip(word);
-  say(word);
+  coachStartWord();
   if(!sample){wTipCache[key]={ipa:'',tip:localTip(word)};return}
   try{
     const r=await sample.json(`Word: "${word}" (as used in: "${sent}"). The learner is Vietnamese.
@@ -732,12 +786,12 @@ Reply with only JSON: {"ipa":"<IPA, British or American, with stress mark>","tip
   }catch(e){if(wcur.word===word){wTipCache[key]={ipa:'',tip:localTip(word)};$('#wtip').textContent=localTip(word)}}
 }
 document.addEventListener('click',e=>{const w=e.target.closest('.wbad[data-word]');if(w){e.preventDefault();openWord(w.dataset.word,w.dataset.sent||'')}});
-$('#wclose').onclick=()=>{$('#wcard').hidden=true;try{speechSynthesis.cancel()}catch(e){}};
-$('#wslow').onclick=()=>speakAsync(wcur.word,0.6);
+$('#wclose').onclick=()=>{coachStopWord();$('#wcard').hidden=true};
+$('#wslow').onclick=()=>{coachStopWord();speakAsync(wcur.word,0.6)};
 $('#wnorm').onclick=()=>speakAsync(wcur.word,0.95);
 $('#wsent').onclick=()=>speakAsync(wcur.sent||wcur.word,0.9);
 $('#wmic').onclick=async()=>{
-  const b=$('#wmic'),out=$('#wres');if(rec){try{rec.stop()}catch(e){}return}
+  coachStopWord();const b=$('#wmic'),out=$('#wres');if(rec){try{rec.stop()}catch(e){}return}
   b.classList.add('on');out.textContent='🎤 Đọc riêng từ này…';let heard='';
   try{heard=await listenAsync(h=>{out.textContent='🎤 '+h})}catch(err){b.classList.remove('on');out.textContent=micMsg(err);return}
   b.classList.remove('on');
