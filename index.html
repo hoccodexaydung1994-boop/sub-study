@@ -136,6 +136,16 @@ details.panel>summary{font-weight:500;color:var(--fg);font-size:14px}
 .wlog .l.me{background:var(--bg);border:1px solid var(--line);justify-self:end;border-bottom-right-radius:4px}
 .wlog .l.ai.now{outline:2px solid var(--accent)}
 .wcard .wctx{font-size:13px;color:var(--muted);margin-top:6px;font-style:italic}
+.wsyl{display:flex;gap:4px;align-items:center;flex-wrap:wrap;margin-top:10px}.wsyl .sep{color:var(--muted)}
+.syl{border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:8px;padding:4px 10px;font-family:var(--serif);font-size:18px;cursor:pointer;display:inline-flex;flex-direction:column;align-items:center;line-height:1.2}
+.syl small{font-family:var(--mono);font-size:11px;color:var(--muted)}
+.syl.st{font-weight:700;border-color:var(--accent)}.syl.good{border-color:var(--ok);color:var(--ok)}.syl.badc{border-color:var(--bad);color:var(--bad);border-width:2px}
+.opbox{margin-top:8px;padding:8px 10px;border:1px dashed var(--line);border-radius:8px;display:grid;gap:6px}
+.ophead b{font-size:18px;font-variant-numeric:tabular-nums}
+.phs{display:flex;flex-wrap:wrap;gap:4px;align-items:center}
+.ph{display:inline-flex;flex-direction:column;align-items:center;min-width:26px;padding:2px 6px;border-radius:6px;font-family:var(--mono);font-size:15px;border:1px solid var(--line);line-height:1.2}
+.ph small{font-size:10px}.ph.pok{color:var(--ok);border-color:var(--ok)}.ph.pnear{color:var(--b);border-color:var(--b)}.ph.pbad{color:var(--bad);border-color:var(--bad);border-width:2px}
+.oplink{border:none;background:transparent;font-family:var(--serif);font-size:15px;padding:0 6px 0 0;color:var(--bad);text-decoration:underline dotted}
 .clipbar{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
 .coach{display:grid;gap:10px}
 .chunk{padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--panel);opacity:.55}
@@ -161,7 +171,8 @@ details.panel>summary{font-weight:500;color:var(--fg);font-size:14px}
 <div class="wcard" id="wcard" hidden>
   <div class="wh"><span class="ww" id="ww"></span><span class="ipa" id="wipa"></span><span class="seg" id="wlang" style="margin-left:auto"><button class="small" data-l="en" aria-pressed="true">English</button><button class="small" data-l="vi" aria-pressed="false">Tiếng Việt</button></span><button class="wclose" id="wclose" aria-label="Đóng">✕</button></div>
   <div class="wctx" id="wctx"></div>
-  <div class="wbtns"><button class="primary small" id="wcoach">▶ Luyện cùng AI</button><button class="small" id="wstop" hidden>■ Dừng</button><button class="small" id="wslow">🔊 Chậm</button><button class="small" id="wnorm">🔊 Bình thường</button><button class="small" id="wsent">🔊 Cả câu</button><button class="primary small mic" id="wmic" style="width:auto;border-radius:6px;font-size:13px">🎤 Đọc</button></div>
+  <div class="wsyl" id="wsyl"></div><div class="hint" id="wsyltip" style="margin:4px 0 0;white-space:pre-wrap"></div>
+  <div class="wbtns"><button class="primary small" id="wcoach">▶ Luyện cùng AI</button><button class="small" id="wstop" hidden>■ Dừng</button><button class="small" id="wbysyl">🔊 Từng âm tiết</button><button class="small" id="wslow">🔊 Chậm</button><button class="small" id="wnorm">🔊 Bình thường</button><button class="small" id="wsent">🔊 Cả câu</button><button class="primary small mic" id="wmic" style="width:auto;border-radius:6px;font-size:13px">🎤 Đọc</button></div>
   <div class="wres" id="wres"></div>
   <div class="wlog" id="wlog"></div>
   <details style="margin-top:8px"><summary class="hint" style="margin:0">Phiên âm & hướng dẫn chi tiết</summary><div class="wtip" id="wtip"></div></details>
@@ -178,6 +189,10 @@ details.panel>summary{font-weight:500;color:var(--fg);font-size:14px}
       <div class="field"><label for="apikey" id="keylabel">Khoá API (lưu trong trình duyệt này)</label><input id="apikey" type="password" placeholder="sk-…" autocomplete="off"></div>
       <div class="field"><label for="model">Model</label><input id="model" type="text" value="claude-haiku-5-5"></div>
     </div>
+    <div class="row">
+      <div class="field"><label for="opurl">Máy chấm phát âm OpenPronounce (tuỳ chọn)</label><input id="opurl" type="text" placeholder="https://ten-ban-sub-study-pronounce.hf.space" autocomplete="off"></div>
+    </div>
+    <div class="toolbar" style="margin-top:-4px"><button class="small" id="optest">Kiểm tra máy chấm</button><span class="hint" style="margin:0" id="opnote">Để trống thì trang chấm bằng nhận dạng chữ như cũ.</span></div>
     <div class="toolbar"><button class="primary small" id="savekey">Lưu</button><button class="small" id="clearkey">Xoá khoá</button><span class="hint" style="margin:0" id="keyhint">Lấy khoá tại console.anthropic.com. Khoá chỉ nằm trong trình duyệt của bạn; không ghi khoá vào file HTML.</span></div>
   </details>
 
@@ -332,7 +347,7 @@ details.panel>summary{font-weight:500;color:var(--fg);font-size:14px}
       </div>
     </section>
   </div>
-<p class="hint" style="margin-top:40px;text-align:center">Sub Study · bản 2026-11-05 18:55</p>
+<p class="hint" style="margin-top:40px;text-align:center">Sub Study · bản 2026-11-06 22:24</p>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -669,7 +684,7 @@ $('#learn').onclick=async e=>{
   if(rec){try{rec.stop()}catch(x){}return}
   b.classList.add('on');st.textContent='🎤 Đang nghe…';let heard='';
   try{heard=it.part==='O'?await listenLong(40,h=>{st.textContent='🎤 '+h}):await listenAsync(h=>{st.textContent='🎤 '+h})}catch(err){b.classList.remove('on');st.textContent=micMsg(err);return}
-  b.classList.remove('on');showClip(box,it.part==='D'||it.part==='O'?'':it.text);
+  b.classList.remove('on');showClip(box,it.part==='D'||it.part==='O'?'':it.text);if(it.part==='A'||it.part==='B'||(it.part==='C'&&!it.given))opRun(it.text,box);
   if(!heard){st.textContent='Máy không nhận ra lời nào (im lặng hoặc quá nhỏ). Bấm "Kiểm tra micro" ở trên để xem máy có thu được tiếng không.';return}
   let score;
   if(it.part==='O'){st.textContent='Bạn nói: “'+heard+'”';if(sample){st.textContent+=' · AI đang nhận xét…';try{const {text:fb}=await sample(`Learner (Vietnamese, intermediate) did a spoken task.\nTask/prompt: "${it.text}"\nTranscript of the learner's speech: "${heard}"\nIn Vietnamese, in at most 4 short lines: (1) did they cover the main points, (2) one grammar fix with the corrected English, (3) one better word/phrase, (4) a score /10. No greeting.`,{modelTier:'quick'});st.textContent='Bạn nói: “'+heard+'”\n'+fb.trim();st.style.whiteSpace='pre-wrap'}catch(e){st.textContent+=' (AI chưa nhận xét được)'}}return}
@@ -695,9 +710,45 @@ function chunkLine(text){
 }
 function speakAsync(text,rate){return new Promise(res=>{try{if(!('speechSynthesis'in window))return res();speechSynthesis.cancel();setTimeout(()=>{const u=new SpeechSynthesisUtterance(text);u.lang='en-GB';u.rate=rate;if(!voices.length)loadVoices();const v=voices.find(v=>/^en[-_]GB/i.test(v.lang))||voices.find(v=>/^en/i.test(v.lang));if(v)u.voice=v;let done=false;const fin=()=>{if(!done){done=true;res()}};u.onend=fin;u.onerror=fin;setTimeout(fin,Math.max(2500,text.length*120));speechSynthesis.speak(u)},60)}catch(e){res()}})}
 // ---- record the learner's voice alongside recognition, for instant playback ----
-let recStream=null,mediaRec=null,lastClip=null,lastClipUrl=null,clipTarget=null;
-async function recStart(){try{if(!navigator.mediaDevices||!window.MediaRecorder)return;if(!recStream)recStream=await navigator.mediaDevices.getUserMedia({audio:true});const chunks=[];mediaRec=new MediaRecorder(recStream);mediaRec.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};mediaRec.onstop=()=>{lastClip=new Blob(chunks,{type:mediaRec.mimeType||'audio/webm'});if(lastClipUrl)URL.revokeObjectURL(lastClipUrl);lastClipUrl=URL.createObjectURL(lastClip);if(clipTarget)showClip(clipTarget);clipTarget=null};mediaRec.start()}catch(e){mediaRec=null}}
+let recStream=null,mediaRec=null,lastClip=null,lastClipUrl=null,clipTarget=null,clipPromise=null,clipResolve=null;
+async function recStart(){try{if(!navigator.mediaDevices||!window.MediaRecorder)return;if(!recStream)recStream=await navigator.mediaDevices.getUserMedia({audio:true});const chunks=[];clipPromise=new Promise(r=>{clipResolve=r});mediaRec=new MediaRecorder(recStream);mediaRec.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};mediaRec.onstop=()=>{lastClip=new Blob(chunks,{type:mediaRec.mimeType||'audio/webm'});if(lastClipUrl)URL.revokeObjectURL(lastClipUrl);lastClipUrl=URL.createObjectURL(lastClip);if(clipTarget)showClip(clipTarget);clipTarget=null;if(clipResolve){clipResolve(lastClip);clipResolve=null}};mediaRec.start()}catch(e){mediaRec=null}}
 function recStop(){try{if(mediaRec&&mediaRec.state!=='inactive')mediaRec.stop()}catch(e){}}
+// ---- OpenPronounce: phoneme-level scoring on the learner's own server (URL set in "Kết nối AI") ----
+function opUrl(){return String(store.get('opurl','')||'').trim().replace(/\/+$/,'')}
+async function opAnalyze(text){
+  const url=opUrl();if(!url||!text)return null;
+  const clip=await Promise.race([clipPromise||Promise.resolve(lastClip),new Promise(r=>setTimeout(()=>r(lastClip),2500))]);
+  if(!clip||!clip.size)throw new Error('Chưa có bản ghi âm');
+  const fd=new FormData();fd.append('file',clip,'rec.'+((clip.type||'').includes('ogg')?'ogg':(clip.type||'').includes('mp4')?'m4a':'webm'));fd.append('expected_text',text);fd.append('lang','en');
+  const ctl=new AbortController();const t=setTimeout(()=>ctl.abort(),120000);
+  try{const res=await fetch(url+'/pronunciation',{method:'POST',body:fd,signal:ctl.signal});if(!res.ok)throw new Error('Máy chấm trả lỗi '+res.status);return await res.json()}
+  catch(e){if(e.name==='AbortError')throw new Error('Máy chấm không trả lời sau 2 phút (Space có thể đang khởi động lại)');if(e instanceof TypeError)throw new Error('Không gọi được máy chấm: kiểm tra địa chỉ trong "Kết nối AI"');throw e}
+  finally{clearTimeout(t)}}
+function opWordPhones(res,word){ // per-phone list for one word: [{exp, heard, conf}]
+  const d=(res&&res.differences)||{};const w=String(word||'').toLowerCase().replace(/[^a-z']/g,'');
+  const err=(d.errors||[]).find(e=>String(e.word||'').toLowerCase().replace(/[^a-z']/g,'')===w);
+  if(err&&Array.isArray(err.phones)&&err.phones.length)return {bad:true,conf:err.confidence||0,phones:err.phones.map(p=>({exp:p.expected,heard:p.heard,conf:+p.confidence||0})),expected:err.expected,actual:err.actual};
+  const words=String((res&&res._text)||'').toLowerCase().split(/\s+/).map(x=>x.replace(/[^a-z']/g,'')).filter(Boolean);
+  const i=words.indexOf(w);const g=(d.expected_phones||[])[i];
+  return g?{bad:false,phones:g.map(x=>({exp:x,heard:x,conf:0}))}:null}
+function phoneChips(list){return list.map(p=>{const cls=p.conf>0.5?'pbad':p.conf>0?'pnear':'pok';const tip=p.conf>0?(p.heard?`nghe thành /${p.heard}/`:'bị mất'):'đúng';return `<span class="ph ${cls}" title="${esc(tip)}">${esc(p.exp)}${p.conf>0?`<small>${p.heard?esc(p.heard):'∅'}</small>`:''}</span>`}).join('')}
+function renderOp(res,host,focusWord){
+  if(!host)return;let box=host.querySelector(':scope > .opbox');if(!box){box=document.createElement('div');box.className='opbox';host.appendChild(box)}
+  if(res==null){box.remove();return}
+  if(res.error){box.innerHTML=`<span class="hint" style="margin:0">Chấm âm vị: ${esc(res.error)}</span>`;return}
+  if(res.loading){box.innerHTML='<span class="hint" style="margin:0">Đang chấm từng âm… (lần đầu sau lúc nghỉ có thể mất 1–2 phút)</span>';return}
+  const d=res.differences||{};const sc=Math.round(+res.score||0);
+  let html=`<div class="ophead"><b>${sc}</b>/100 <span class="hint" style="margin:0">chấm âm vị · máy nghe: “${esc(String(res.transcribe||'').toLowerCase())}”</span></div>`;
+  if(focusWord){const w=opWordPhones(res,focusWord);if(w)html+=`<div class="phs"><span class="hint" style="margin:0 6px 0 0">${esc(focusWord)}</span>${phoneChips(w.phones)}</div>`}
+  const errs=(d.errors||[]).filter(e=>!focusWord||String(e.word).toLowerCase()!==String(focusWord).toLowerCase());
+  for(const e of errs.slice(0,8))html+=`<div class="phs"><button type="button" class="wbad oplink" data-word="${esc(String(e.word).toLowerCase())}" data-sent="${esc(res._text||'')}">${esc(e.word)}</button>${Array.isArray(e.phones)&&e.phones.length?phoneChips(e.phones.map(p=>({exp:p.expected,heard:p.heard,conf:+p.confidence||0}))):`<span class="hint" style="margin:0">/${esc(e.expected||'')}/ → /${esc(e.actual||'')}/</span>`}</div>`;
+  if(!errs.length&&!focusWord)html+='<div class="hint" style="margin:4px 0 0">Không có từ nào bị đánh dấu sai âm.</div>';
+  box.innerHTML=html;
+}
+async function opRun(text,host,focusWord){ // fire-and-render; returns the result or null
+  if(!opUrl()||!host)return null;renderOp({loading:true},host);
+  try{const r=await opAnalyze(text);if(r){r._text=text;renderOp(r,host,focusWord);if(Math.round(+r.score||0)>=95)ding('perfect')}return r}
+  catch(e){renderOp({error:e.message||String(e)},host);return null}}
 let clipAudio=null;
 function playClip(){if(!lastClipUrl)return;try{speechSynthesis.cancel()}catch(e){}if(clipAudio){clipAudio.pause()}clipAudio=new Audio(lastClipUrl);clipAudio.play().catch(()=>{})}
 function showClip(host,model){ // host: element to put the playback bar into; model: text for the 🔊 Mẫu button
@@ -786,6 +837,29 @@ function coachLine(kind,word,heard,tries){
   };
   return L[kind]||'';
 }
+// ---- syllables: split, show, mark which one the recognizer missed ----
+function splitSyl(word){
+  const w=word.toLowerCase().replace(/[^a-z']/g,'');if(w.length<=3)return [w];
+  const isV=(c,i)=>/[aeiou]/.test(c)||(c==='y'&&i>0);
+  const g=[];let i=0;while(i<w.length){if(isV(w[i],i)){let j=i;while(j<w.length&&isV(w[j],j))j++;g.push([i,j]);i=j}else i++}
+  if(g.length>1){const L=g[g.length-1],tail=w.slice(L[0]),pre=w.slice(0,L[0]);
+    if((tail==='e')||(tail==='ed'&&!/[td]$/.test(pre))||(tail==='es'&&!/(s|x|z|ch|sh|g|c)$/.test(pre)))g.pop()}
+  if(g.length<2)return [w];
+  const out=[];let st=0;for(let k=1;k<g.length;k++){const a=g[k-1][1],b=g[k][0];const c=b-a<=1?a:a+1;out.push(w.slice(st,c));st=c}out.push(w.slice(st));return out}
+function sylTipLocal(t){const h=SOUND_TIPS.filter(([re])=>re.test(t));return h.length?(wLang==='en'?SOUND_TIPS_EN[h[0][1]]:h[0][2]):''}
+function localSyl(word){const p=splitSyl(word);return p.map((t,i)=>({text:t,ipa:'',say:t,stress:false,tip:sylTipLocal(t)}))}
+function markSyl(syl,target,heard){
+  const t=target.toLowerCase(),H=norm(heard);if(H.includes(t))return syl.map(()=>true);
+  let bp=0,bs=0,best=-1;for(const h of H){let p=0;while(p<h.length&&p<t.length&&h[p]===t[p])p++;let q=0;while(q<h.length-p&&q<t.length-p&&h[h.length-1-q]===t[t.length-1-q])q++;if(p+q>best){best=p+q;bp=p;bs=q}}
+  const total=syl.reduce((n,x)=>n+x.text.length,0)||1,k=t.length/total;let pos=0;
+  return syl.map(x=>{const a=pos*k,b=(pos+x.text.length)*k;pos+=x.text.length;return b<=bp+0.01||a>=t.length-bs-0.01})}
+let wSyl=[];
+function renderSyl(ok){const box=$('#wsyl');if(!wSyl.length||wSyl.length<2&&!wSyl[0].ipa){box.innerHTML='';return}
+  box.innerHTML='<span class="hint" style="margin:0 4px 0 0">Âm tiết:</span>'+wSyl.map((x,i)=>`<button type="button" class="syl ${x.stress?'st':''} ${ok?(ok[i]?'good':'badc'):''}" data-si="${i}">${esc(x.text)}${x.ipa?`<small>${esc(x.ipa)}</small>`:''}</button>`).join('<span class="sep">·</span>')}
+document.addEventListener('click',e=>{const b=e.target.closest('#wsyl .syl');if(!b)return;const x=wSyl[+b.dataset.si];if(!x)return;
+  $('#wsyltip').textContent=(x.ipa?'/'+x.ipa+'/'+(x.stress?(wLang==='en'?' · stressed':' · nhấn mạnh'):'')+'\n':'')+(x.tip||'');
+  speakAsync(x.say||x.text,0.55).then(()=>new Promise(r=>setTimeout(r,250))).then(()=>speakAsync(wcur.word,0.8))});
+async function speakBySyl(){for(const x of wSyl){await speakAsync(x.say||x.text,0.6);await new Promise(r=>setTimeout(r,280))}await speakAsync(wcur.word,0.8)}
 function firstTipLine(word){const t=(wTipCache[word.toLowerCase()]||{}).tip||localTip(word);const l=t.split('\n').find(x=>x.trim());return l?l.replace(/^•\s*/,''):''}
 let wTries=0,wOk=0,wStage='word';
 async function coachStartWord(){
@@ -802,7 +876,7 @@ async function coachHear(){ // called from the 🎤 button while a coaching sess
   try{speechSynthesis.cancel()}catch(e){}
   b.classList.add('on');out.textContent=wStage==='sent'?'🎤 Nói cả câu…':'🎤 Đọc từ này…';let heard='';
   try{heard=await listenAsync(h=>{out.textContent='🎤 '+h})}catch(err){b.classList.remove('on');out.textContent=micMsg(err);return}
-  b.classList.remove('on');showClip($('#wres').parentElement.querySelector('#wclipbox')||mkClipBox($('#wres')),wStage==='sent'?wcur.sent:word);if(!wRun)return;
+  b.classList.remove('on');const cbox=$('#wclipbox')||mkClipBox($('#wres'));showClip(cbox,wStage==='sent'?wcur.sent:word);const opP=opUrl()?opRun(wStage==='sent'?wcur.sent:word,cbox,word):null;if(!wRun)return;
   if(!heard){await aiSay(coachLine('silent',word));return}
   wlog('me',heard);
   if(wStage==='sent'){
@@ -811,7 +885,11 @@ async function coachHear(){ // called from the 🎤 button while a coaching sess
     else{await aiSay(coachLine('sentbad',word));await speakAsync(wcur.sent,0.7);await aiSay(coachLine('sentturn',word))}
     return}
   wTries++;
-  const H=norm(heard),target=word.toLowerCase();const hit=H.includes(target);
+  const H=norm(heard),target=word.toLowerCase();let hit=H.includes(target);
+  const opr=opP?await opP:null;let opWorst=null;
+  if(opr){const w=opWordPhones(opr,word);if(w){hit=!w.bad;if(w.bad){opWorst=w.phones.slice().sort((a,b)=>b.conf-a.conf)[0]}}}
+  if(!wRun)return;
+  const sylOk=markSyl(wSyl,word,heard);renderSyl(sylOk);
   const near=!hit&&H.some(x=>x.length>2&&(target.startsWith(x)||x.startsWith(target)||target.slice(-3)===x.slice(-3)));
   if(hit){wOk++;ding('perfect');out.innerHTML=`<span class="ok">✓ ${esc(word)}</span>`;
     if(wOk<2){await aiSay(coachLine('ok',word,heard,wTries));await aiSay(coachLine('listen',word));return}
@@ -820,6 +898,9 @@ async function coachHear(){ // called from the 🎤 button while a coaching sess
     else{wRun=false;$('#wcoach').hidden=false;$('#wstop').hidden=true}
     return}
   out.innerHTML=`<span class="bad">✗</span> “${esc(heard)}”`;
+  if(opWorst&&opWorst.conf>0){await aiSay(wLang==='en'?`The sound /${opWorst.exp}/ is not right yet. I heard ${opWorst.heard?'/'+opWorst.heard+'/':'nothing there'}. Listen.`:`Âm /${opWorst.exp}/ chưa đúng, máy nghe ${opWorst.heard?'thành /'+opWorst.heard+'/':'bị mất'}. Nghe lại nhé.`);await speakAsync(word,0.6);const tip=firstTipLine(word);if(tip&&wTries>=2)await aiSay(tip);await speakAsync(word,0.95);await aiSay(coachLine('listen',word));return}
+  const weak=wSyl.filter((x,i)=>!sylOk[i]);
+  if(weak.length&&weak.length<wSyl.length){const x=weak[0];await aiSay(wLang==='en'?`The syllable “${x.text}” is not clear yet. Listen.`:`Âm tiết “${x.text}” chưa rõ. Nghe nhé.`);await speakAsync(x.say||x.text,0.55);if(x.tip&&wTries>=2)await aiSay(x.tip);await speakAsync(word,0.8);await aiSay(coachLine('listen',word));return}
   if(near){await aiSay(coachLine('near',word,heard));await speakAsync(word,0.75)}
   else{await aiSay(coachLine('bad',word,heard));await speakAsync(word,0.6);const tip=firstTipLine(word);if(tip&&wTries>=2)await aiSay(tip);await speakAsync(word,0.95)}
   if(wTries>=4&&wOk<2){await aiSay(coachLine('giveup',word));await speakAsync(word,0.6)}
@@ -828,20 +909,21 @@ async function coachHear(){ // called from the 🎤 button while a coaching sess
 function coachStopWord(){wRun=false;try{speechSynthesis.cancel()}catch(e){}if(rec){try{rec.stop()}catch(e){}}$('#wcoach').hidden=false;$('#wstop').hidden=true}
 $('#wcoach').onclick=coachStartWord;$('#wstop').onclick=coachStopWord;
 async function openWord(word,sent){
-  coachStopWord();wcur={word,sent};const c=$('#wcard');c.hidden=false;$('#ww').textContent=word;$('#wipa').textContent='';$('#wctx').textContent=sent?'Trong câu: '+sent:'';$('#wres').textContent='';$('#wlog').innerHTML='';const cb=$('#wclipbox');if(cb)cb.remove();
+  coachStopWord();wcur={word,sent};const c=$('#wcard');c.hidden=false;$('#ww').textContent=word;$('#wipa').textContent='';$('#wctx').textContent=sent?'Trong câu: '+sent:'';$('#wres').textContent='';$('#wlog').innerHTML='';const cb=$('#wclipbox');if(cb)cb.remove();$('#wsyltip').textContent='';wSyl=localSyl(word);renderSyl();
   const key=word.toLowerCase();
-  if(wTipCache[key]){$('#wipa').textContent=wTipCache[key].ipa;$('#wtip').textContent=wTipCache[key].tip;coachStartWord();return}
+  if(wTipCache[key]){$('#wipa').textContent=wTipCache[key].ipa;$('#wtip').textContent=wTipCache[key].tip;if(wTipCache[key].syl){wSyl=wTipCache[key].syl;renderSyl()}coachStartWord();return}
   $('#wtip').textContent=sample?(wLang==='en'?'Asking AI…':'Đang hỏi AI cách phát âm…'):localTip(word);
   coachStartWord();
   if(!sample){wTipCache[key]={ipa:'',tip:localTip(word)};return}
   try{
     const r=await sample.json(`Word: "${word}" (as used in: "${sent}"). The learner is Vietnamese.
-Reply with only JSON: {"ipa":"<IPA, British or American, with stress mark>","tip":"<in ${wLang==='en'?'simple English':'Vietnamese'}, 3-5 short lines, each starting with •: for each sound Vietnamese speakers get wrong in THIS word, where the tongue/lips/jaw go and how the air flows; which syllable is stressed; one common mistake and how to fix it>"}`,{modelTier:'quick',cache:{gcTime:86400000}});
-    if(wcur.word!==word)return;wTipCache[key]={ipa:r.ipa||'',tip:(r.tip||'').trim()||localTip(word)};$('#wipa').textContent=wTipCache[key].ipa;$('#wtip').textContent=wTipCache[key].tip;
+Reply with only JSON: {"ipa":"<IPA, British or American, with stress mark>","syllables":[{"text":"<the spelling chunk of the word for this syllable>","ipa":"<IPA of this syllable>","say":"<simple respelling a text-to-speech voice reads correctly, e.g. ZAWS>","stress":true|false,"tip":"<one short line in ${wLang==='en'?'simple English':'Vietnamese'}: where the tongue and lips go for this syllable>"}],"tip":"<in ${wLang==='en'?'simple English':'Vietnamese'}, 3-5 short lines, each starting with •: for each sound Vietnamese speakers get wrong in THIS word, where the tongue/lips/jaw go and how the air flows; which syllable is stressed; one common mistake and how to fix it>"}`,{modelTier:'quick',cache:{gcTime:86400000}});
+    if(wcur.word!==word)return;wTipCache[key]={ipa:r.ipa||'',tip:(r.tip||'').trim()||localTip(word)};$('#wipa').textContent=wTipCache[key].ipa;$('#wtip').textContent=wTipCache[key].tip;if(Array.isArray(r.syllables)&&r.syllables.length){wTipCache[key].syl=r.syllables.map(x=>({text:String(x.text||''),ipa:String(x.ipa||''),say:String(x.say||x.text||''),stress:!!x.stress,tip:String(x.tip||'')}));wSyl=wTipCache[key].syl;renderSyl()}
   }catch(e){if(wcur.word===word){wTipCache[key]={ipa:'',tip:localTip(word)};$('#wtip').textContent=localTip(word)}}
 }
 document.addEventListener('click',e=>{const w=e.target.closest('.wbad[data-word]');if(w){e.preventDefault();openWord(w.dataset.word,w.dataset.sent||'')}});
 $('#wclose').onclick=()=>{coachStopWord();$('#wcard').hidden=true};
+$('#wbysyl').onclick=()=>{coachStopWord();speakBySyl()};
 $('#wslow').onclick=()=>{coachStopWord();speakAsync(wcur.word,0.6)};
 $('#wnorm').onclick=()=>speakAsync(wcur.word,0.95);
 $('#wsent').onclick=()=>speakAsync(wcur.sent||wcur.word,0.9);
@@ -850,10 +932,10 @@ $('#wmic').onclick=async()=>{
   const b=$('#wmic'),out=$('#wres');if(rec){try{rec.stop()}catch(e){}return}
   b.classList.add('on');out.textContent='🎤 Đọc riêng từ này…';let heard='';
   try{heard=await listenAsync(h=>{out.textContent='🎤 '+h})}catch(err){b.classList.remove('on');out.textContent=micMsg(err);return}
-  b.classList.remove('on');showClip($('#wclipbox')||mkClipBox(out),wcur.word);
+  b.classList.remove('on');const wbox=$('#wclipbox')||mkClipBox(out);showClip(wbox,wcur.word);opRun(wcur.word,wbox,wcur.word);
   if(!heard){out.textContent='Không nghe thấy gì, thử lại.';return}
   const H=norm(heard);const target=wcur.word.toLowerCase();
-  const hit=H.includes(target);
+  const hit=H.includes(target);renderSyl(markSyl(wSyl,wcur.word,heard));
   const near=!hit&&H.some(x=>x.length>2&&(target.startsWith(x)||x.startsWith(target)||target.endsWith(x.slice(-2))));
   out.innerHTML=hit?`<span class="ok">✓ ${esc(wcur.word)}</span> — máy nghe đúng: “${esc(heard)}”`:`<span class="bad">✗</span> máy nghe thành “${esc(heard)}”${near?' (gần đúng — chú ý âm cuối/trọng âm)':''}`;
   if(hit)ding('perfect');
@@ -904,7 +986,7 @@ async function coachStep(){
   let heard='';
   try{heard=await listenAsync(h=>{st.textContent='Nghe được: '+h})}
   catch(e){st.textContent=micMsg(e);box.querySelector('.cbtns').hidden=false;return}
-  showClip(box,text);if(!coachRun)return;
+  showClip(box,text);opRun(text,box);if(!coachRun)return;
   if(!heard){st.textContent='Không nghe thấy gì. Nói to hơn một chút nhé.';coachTries++;box.querySelector('.cbtns').hidden=false;if(coachTries<3)return coachStep();return}
   const r=markWords(text,heard);box.querySelector('.ctext').innerHTML=r.html;
   if(r.bad.length===0){ding('perfect');st.textContent='✓ Chuẩn rồi. Máy nghe: “'+heard+'”';box.classList.add('done');box.classList.remove('cur');coachIdx++;coachTries=0;return coachStep()}
@@ -966,7 +1048,7 @@ document.addEventListener('click',e=>{
     let heard='';outEl.textContent='Đang nghe… hãy đọc câu trên.';
     rec.onresult=ev=>{heard='';for(const r of ev.results)heard+=r[0].transcript;outEl.textContent='Nghe được: '+heard};
     rec.onerror=ev=>{outEl.textContent=ev.error==='not-allowed'||ev.error==='service-not-allowed'?'Trang không được phép dùng micro ở đây. Mở trang trên GitHub Pages/Vercel hoặc cho phép micro trong thanh địa chỉ.':'Không nghe được, thử lại.'};
-    rec.onend=()=>{recStop();b.classList.remove('on');rec=null;showClip(line.querySelector('.heard').parentElement,target);if(!heard.trim())return;
+    rec.onend=()=>{recStop();b.classList.remove('on');rec=null;const host=line.querySelector('.heard').parentElement;showClip(host,target);opRun(target,host);if(!heard.trim())return;
       const H=new Set(norm(heard));const words=target.split(/(\s+)/);let ok=0,n=0;
       const html=words.map(w=>{if(/^\s*$/.test(w))return w;const k=w.toLowerCase().replace(/[^a-z']/g,'');if(!k)return esc(w);n++;const hit=H.has(k);if(hit)ok++;return hit?`<span class="wok">${esc(w)}</span>`:`<span class="wbad" data-word="${esc(k)}" data-sent="${esc(target)}" title="Bấm để luyện từ này">${esc(w)}</span>`}).join('');
       const pct=n?Math.round(100*ok/n):0;cheer(pct);
@@ -1143,8 +1225,13 @@ function key(){return store.get('apikey_'+provider(),'')}
 function model(){return store.get('model_'+provider(),PROVIDERS[provider()].defModel)}
 function aiStatus(){const P=PROVIDERS[provider()];const k=key();$('#aistatus').textContent=k?'Kết nối AI: '+P.name+' · '+model():'Kết nối AI (chưa có khoá API)';$('#apikey').value=k;$('#apikey').placeholder=P.ph;$('#model').value=model();$('#keyhint').textContent=P.hint;[...$('#provider').children].forEach(b=>b.setAttribute('aria-pressed',b.dataset.p===provider()));sample=k?realSample:null;$('#chatnote').textContent=k?'':'Chế độ có AI cần khoá API: mở "Kết nối AI" ở đầu trang.'}
 $('#provider').onclick=e=>{const b=e.target.closest('button');if(!b)return;store.set('provider',b.dataset.p);aiStatus()};
-$('#savekey').onclick=()=>{store.set('apikey_'+provider(),$('#apikey').value.trim());store.set('model_'+provider(),$('#model').value.trim()||PROVIDERS[provider()].defModel);aiStatus();$('#aipanel').open=false};
+$('#savekey').onclick=()=>{store.set('opurl',$('#opurl').value.trim());store.set('apikey_'+provider(),$('#apikey').value.trim());store.set('model_'+provider(),$('#model').value.trim()||PROVIDERS[provider()].defModel);aiStatus();$('#aipanel').open=false};
 $('#clearkey').onclick=()=>{store.set('apikey_'+provider(),'');aiStatus()};
+$('#opurl').value=store.get('opurl','');
+$('#opurl').addEventListener('change',()=>store.set('opurl',$('#opurl').value.trim()));
+$('#optest').onclick=async()=>{const u=$('#opurl').value.trim().replace(/\/+$/,'');store.set('opurl',u);const n=$('#opnote');if(!u){n.textContent='Chưa nhập địa chỉ.';return}n.textContent='Đang gọi '+u+'/health … (Space đang ngủ thì mất 1–2 phút)';
+  try{const ctl=new AbortController();const t=setTimeout(()=>ctl.abort(),150000);const r=await fetch(u+'/health',{signal:ctl.signal});clearTimeout(t);const j=await r.json();n.textContent=j&&j.status==='ok'?'✓ Máy chấm đã sẵn sàng. Từ giờ mỗi lần bấm 🎤 sẽ chấm thêm từng âm.':'Máy chấm trả về: '+JSON.stringify(j)}
+  catch(e){n.textContent='✗ Không gọi được: '+(e.name==='AbortError'?'quá 2,5 phút không trả lời':(e.message||e))+'. Kiểm tra địa chỉ (phải bắt đầu bằng https:// và kết thúc .hf.space) và Space đang ở trạng thái Running.'}};
 async function readSSE(res,onText,pick){const reader=res.body.getReader();const dec=new TextDecoder();let buf='',text='';
   while(true){const {value,done}=await reader.read();if(done)break;buf+=dec.decode(value,{stream:true});const lines=buf.split('\n');buf=lines.pop();
     for(const l of lines){if(!l.startsWith('data:'))continue;const body=l.slice(5).trim();if(body==='[DONE]')continue;try{const d=pick(JSON.parse(body));if(d){text+=d;onText({text,delta:d})}}catch(e){}}}
