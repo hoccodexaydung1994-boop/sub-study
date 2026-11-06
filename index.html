@@ -347,7 +347,7 @@ details.panel>summary{font-weight:500;color:var(--fg);font-size:14px}
       </div>
     </section>
   </div>
-<p class="hint" style="margin-top:40px;text-align:center">Sub Study · bản 2026-11-07 00:42</p>
+<p class="hint" style="margin-top:40px;text-align:center">Sub Study · bản 2026-11-07 00:47</p>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -800,7 +800,7 @@ function localTip(word){const w=word.toLowerCase();const hits=SOUND_TIPS.filter(
   if(wLang==='en')return (hits.length?hits.map(([,l])=>`• ${l}: ${SOUND_TIPS_EN[l]||''}`).join('\n'):'• Say it slowly, sound by sound, with a clear ending, then join them at normal speed.')+'\n• Stress: listen to the model and copy the syllable that is louder and longer.';
   return (hits.length?hits.map(([,l,t])=>`• ${l}: ${t}`).join('\n'):'• Đọc chậm, tách từng âm, nhấn rõ âm cuối rồi ghép lại ở tốc độ thường.')+'\n• Trọng âm: nghe mẫu và bắt chước âm nào được nhấn mạnh, kéo dài nhất.'}
 let wcur={word:'',sent:''},wTipCache={},wRun=false,wLang=store.get('coachLang','en'),viWarned=false;
-function setLang(l){wLang=l;store.set('coachLang',l);[...$('#wlang').children].forEach(b=>b.setAttribute('aria-pressed',b.dataset.l===l));wTipCache={};viWarned=false;if(l==='vi'){if(!voices.length)loadVoices();if(voices.length&&!voices.some(v=>/^vi/i.test(v.lang)))noViVoice()}}
+function setLang(l){wLang=l;store.set('coachLang',l);[...$('#wlang').children].forEach(b=>b.setAttribute('aria-pressed',b.dataset.l===l));wTipCache={};viWarned=false;if(l==='vi'){setTimeout(()=>{try{if(!voices.length)loadVoices();if(voices.length&&!voices.some(v=>/^vi/i.test(v.lang)))noViVoice()}catch(e){}},0)}}
 $('#wlang').onclick=e=>{const b=e.target.closest('button');if(!b)return;setLang(b.dataset.l);if(wcur.word){const w=wcur.word,st=wcur.sent;coachStopWord();openWord(w,st)}};
 setLang(wLang);
 function speakVi(text){return new Promise(res=>{try{if(!('speechSynthesis'in window)||!$('#speak').checked)return res();speechSynthesis.cancel();setTimeout(()=>{const u=new SpeechSynthesisUtterance(text);const en=wLang==='en';u.lang=en?'en-GB':'vi-VN';u.rate=en?0.95:1.05;if(!voices.length)loadVoices();const v=en?(voices.find(v=>/^en[-_]GB/i.test(v.lang))||voices.find(v=>/^en/i.test(v.lang))):voices.find(v=>/^vi/i.test(v.lang));if(v)u.voice=v;else if(!en){noViVoice();return res()}let done=false;const fin=()=>{if(!done){done=true;res()}};u.onend=fin;u.onerror=fin;setTimeout(fin,Math.max(2500,text.length*90));speechSynthesis.speak(u)},60)}catch(e){res()}})}
