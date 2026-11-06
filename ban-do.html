@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bản Đồ Phát Âm Mỹ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Be+Vietnam+Pro:wght@400;500;600;700&family=Noto+Sans:wght@400;600&display=swap" rel="stylesheet">
+<style>
+/* Layout: a game journey — HUD + winding map up top, then the lesson loop, a playable minimal-pair round, tips, sources, and the reference tables at the end. */
+:root{
+  --sky:#eaf0f7;        /* page ground */
+  --paper:#ffffff;      /* cards */
+  --ink:#152238;        /* text */
+  --muted:#5a6a82;
+  --line:#d3dcea;
+  --sun:#f2b705;        /* XP, rewards */
+  --sea:#0e7c86;        /* primary accent */
+  --sea-soft:#d8f0f1;
+  --berry:#c8385a;      /* errors */
+  --leaf:#2f8f4e;       /* correct */
+  --display:"Baloo 2","Be Vietnam Pro",system-ui,sans-serif;
+  --body:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --ipa:"Noto Sans","Segoe UI","Lucida Sans Unicode",sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --sky:#0f1a2b;--paper:#17253b;--ink:#e8eef8;--muted:#9fb0c8;--line:#2a3b56;
+  --sun:#f5c84a;--sea:#3fc1c9;--sea-soft:#163c45;--berry:#ff7d97;--leaf:#6fd28e;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --sky:#0f1a2b;--paper:#17253b;--ink:#e8eef8;--muted:#9fb0c8;--line:#2a3b56;
+  --sun:#f5c84a;--sea:#3fc1c9;--sea-soft:#163c45;--berry:#ff7d97;--leaf:#6fd28e;color-scheme:dark}
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{animation:none!important;transition:none!important}}
+body{margin:0;background:var(--sky);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.6}
+a{color:var(--sea)}
+:focus-visible{outline:3px solid var(--sun);outline-offset:2px;border-radius:6px}
+.wrap{max-width:1080px;margin:0 auto;padding:24px max(16px,env(safe-area-inset-left)) 64px}
+h1,h2,h3{font-family:var(--display);line-height:1.15;text-wrap:balance;margin:0}
+h1{font-size:clamp(2.1rem,5vw,3.3rem);font-weight:800;letter-spacing:-.01em}
+h2{font-size:clamp(1.55rem,3.2vw,2.1rem);font-weight:800}
+h3{font-size:1.2rem;font-weight:700}
+p{margin:0}
+.lead{font-size:1.08rem;color:var(--muted);max-width:62ch}
+.ipa{font-family:var(--ipa);letter-spacing:.01em}
+section{margin-top:56px;display:grid;gap:18px}
+.sechead{display:grid;gap:6px}
+.kicker{font-size:.78rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--sea)}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:18px}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
+.note{font-size:.88rem;color:var(--muted)}
+.tag{display:inline-block;font-size:.74rem;font-weight:700;padding:2px 9px;border-radius:999px;background:var(--sea-soft);color:var(--sea)}
+
+/* ---------- HERO + HUD ---------- */
+.hero{display:grid;gap:18px}
+.topnav{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.topnav a{font-weight:700;text-decoration:none}
+.say{display:grid;gap:10px;padding:14px;border:1px dashed var(--line);border-radius:14px}
+.say .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:center}
+.rec{font-family:var(--display);font-weight:800;font-size:1.05rem;border:none;border-radius:999px;padding:10px 20px;background:var(--berry);color:#fff}
+.rec[aria-pressed="true"]{animation:pulse 1s infinite}
+@keyframes pulse{50%{opacity:.6}}
+.phs{display:flex;flex-wrap:wrap;gap:5px;justify-content:center}
+.ph{display:inline-flex;flex-direction:column;align-items:center;min-width:30px;padding:3px 8px;border-radius:8px;font-family:var(--ipa);font-size:1.15rem;border:1.5px solid currentColor;line-height:1.15}
+.ph small{font-size:.7rem}.ph.ok{color:var(--leaf)}.ph.near{color:var(--sun)}.ph.bad{color:var(--berry);border-width:2.5px}
+.aibox{background:var(--sea-soft);border-radius:12px;padding:12px 14px;white-space:pre-wrap;line-height:1.55;font-size:.95rem}
+.aibox b{font-family:var(--display)}
+.saybig{font-family:var(--display);font-size:1.6rem;font-weight:800;text-align:center}
+td .w{cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px}
+.hud{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.chip{display:flex;align-items:center;gap:8px;background:var(--paper);border:1px solid var(--line);border-radius:999px;padding:6px 14px;font-weight:700;font-variant-numeric:tabular-nums}
+.chip svg{flex:none}
+.xpbar{flex:1 1 220px;min-width:200px;display:grid;gap:4px}
+.xpbar .track{height:12px;border-radius:999px;background:var(--line);overflow:hidden}
+.xpbar .fill{height:100%;width:62%;background:linear-gradient(90deg,var(--sun),color-mix(in srgb,var(--sun) 60%,var(--berry)));border-radius:999px;transition:width .5s}
+.xpbar small{color:var(--muted);font-weight:600}
+.mapcard{padding:0;overflow:hidden}
+.map{display:block;width:100%;height:auto;max-width:100%}
+.map text{font-family:var(--display)}
+.legend{display:flex;flex-wrap:wrap;gap:14px;padding:12px 18px;border-top:1px solid var(--line);font-size:.86rem;color:var(--muted)}
+.legend span{display:flex;align-items:center;gap:6px}
+.dot{width:12px;height:12px;border-radius:50%;display:inline-block}
+
+/* ---------- STAGES ---------- */
+.stage{display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:start}
+.badge{width:54px;height:54px;border-radius:16px;display:grid;place-items:center;font-family:var(--display);font-weight:800;font-size:1.4rem;color:#fff}
+.stage ul{margin:6px 0 0;padding-left:18px}
+.stage li{margin:2px 0}
+.pairs{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.pairs span{font-size:.82rem;padding:2px 8px;border-radius:8px;border:1px dashed var(--line)}
+
+/* ---------- LESSON LOOP ---------- */
+.loop{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;counter-reset:s}
+.step{position:relative;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:14px 14px 14px 14px;display:grid;gap:6px}
+.step b{font-family:var(--display);font-size:1.05rem}
+.step .n{position:absolute;top:-10px;left:12px;background:var(--sea);color:#fff;font-weight:800;font-size:.75rem;border-radius:999px;padding:1px 8px}
+.step svg{width:42px;height:42px}
+
+/* ---------- ELSA reference ---------- */
+.skills{display:flex;flex-wrap:wrap;gap:8px}
+.skills span{padding:6px 12px;border-radius:10px;background:var(--sea-soft);color:var(--ink);font-weight:600;font-size:.9rem}
+
+/* ---------- GAME ---------- */
+.game{display:grid;gap:14px}
+.gametop{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+.choices{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+button{font:inherit;cursor:pointer}
+.big{font-family:var(--display);font-size:1.6rem;font-weight:800;padding:22px 10px;border-radius:16px;border:2px solid var(--line);background:var(--paper);color:var(--ink);transition:transform .12s,border-color .12s}
+.big:hover{border-color:var(--sea);transform:translateY(-2px)}
+.big.ok{border-color:var(--leaf);background:color-mix(in srgb,var(--leaf) 14%,var(--paper))}
+.big.no{border-color:var(--berry);background:color-mix(in srgb,var(--berry) 12%,var(--paper))}
+.big small{display:block;font-family:var(--ipa);font-size:.95rem;font-weight:400;color:var(--muted)}
+.play{display:flex;align-items:center;gap:10px;justify-content:center;font-family:var(--display);font-weight:800;font-size:1.15rem;background:var(--sea);color:#fff;border:none;border-radius:999px;padding:12px 22px}
+.play:hover{filter:brightness(1.08)}
+.ghost{background:transparent;border:1px solid var(--line);color:var(--ink);border-radius:999px;padding:8px 16px;font-weight:600}
+.msg{min-height:1.6em;font-weight:600;text-align:center}
+.pop{animation:pop .45s ease}
+@keyframes pop{0%{transform:scale(1)}40%{transform:scale(1.12)}100%{transform:scale(1)}}
+
+/* ---------- MOUTHS ---------- */
+.mouths{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.mouth{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:12px;display:grid;gap:6px;justify-items:center;text-align:center}
+.mouth svg{width:110px;height:80px}
+.mouth b{font-family:var(--ipa);font-size:1.25rem}
+
+/* ---------- TIPS ---------- */
+.tips{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.tip{background:var(--paper);border:1px solid var(--line);border-left:6px solid var(--sun);border-radius:12px;padding:14px;display:grid;gap:4px}
+.tip b{font-family:var(--display);font-size:1.05rem}
+
+/* ---------- SOURCES ---------- */
+.src{display:grid;gap:4px}
+.src a{font-weight:700;text-decoration:none}
+.src a:hover{text-decoration:underline}
+.src .tag{justify-self:start}
+
+/* ---------- TABLES ---------- */
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:14px;background:var(--paper)}
+table{border-collapse:collapse;width:100%;min-width:640px;font-size:.93rem}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:.78rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);background:color-mix(in srgb,var(--sea-soft) 55%,var(--paper))}
+tr:last-child td{border-bottom:none}
+td.sym{font-family:var(--ipa);font-size:1.15rem;font-weight:600;color:var(--sea);white-space:nowrap}
+td .w{font-weight:600}
+td.vn{color:var(--muted)}
+.rules{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+.rule{display:grid;gap:6px}
+.rule ol,.rule ul{margin:0;padding-left:20px}
+.rule li{margin:3px 0}
+.ex{font-size:.88rem;color:var(--muted)}
+.tabs{display:flex;flex-wrap:wrap;gap:6px}
+.tabs button{border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:999px;padding:6px 14px;font-weight:600}
+.tabs button[aria-selected="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+footer{margin-top:56px;font-size:.85rem;color:var(--muted)}
+@media (max-width:520px){.choices{grid-template-columns:1fr}.big{font-size:1.4rem}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- ======================= HERO ======================= -->
+<header class="hero">
+  <nav class="topnav"><a href="./">← Về Sub Study</a><span style="display:flex;gap:8px;flex-wrap:wrap"><span class="chip" id="scorer" title="Máy chấm phát âm OpenPronounce trên Modal">🎯 Máy chấm: <b id="scorerState">chưa gọi</b></span><span class="chip" id="aichip" title="Khoá AI lấy từ Kết nối AI của Sub Study">🤖 AI: <b id="aiState">—</b></span></span></nav>
+  <span class="kicker">Lộ trình phát âm tiếng Anh Mỹ · General American</span>
+  <h1>Bản Đồ Phát Âm Mỹ</h1>
+  <p class="lead">Sáu chặng, mỗi chặng gồm các bài chơi như game: nghe khẩu hình, phân biệt cặp âm, nói từ, nói câu, nhập vai, rồi kiểm tra. Cấu trúc tham khảo cách ELSA Speak tổ chức bài học, viết lại cho người Việt và nối với hai công cụ bạn đang dùng (Sub Study và Versant Lab).</p>
+
+  <div class="hud" aria-label="Bảng thành tích (ví dụ)">
+    <span class="chip" title="Chuỗi ngày học liên tục">
+      <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2c1 4 5 5 5 10a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-3-1-5 1-9z" fill="var(--berry)"/></svg>
+      <span id="streak">7</span> ngày
+    </span>
+    <span class="chip" title="Huy hiệu đã mở">
+      <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="10" r="7" fill="var(--sun)"/><path d="M8 15l-2 7 6-3 6 3-2-7" fill="var(--sea)"/></svg>
+      <span id="badges">3</span>/6 huy hiệu
+    </span>
+    <div class="xpbar">
+      <small>Cấp 4 · <span id="xpnum">620</span> / 1000 XP <span class="note">(số liệu ví dụ, mini-game bên dưới cộng XP thật)</span></small>
+      <div class="track"><div class="fill" id="xpfill"></div></div>
+    </div>
+  </div>
+
+  <figure class="card mapcard" style="margin:0">
+    <svg class="map" viewBox="0 0 1000 330" role="img" aria-labelledby="maptitle">
+      <title id="maptitle">Bản đồ 6 chặng phát âm, chặng 1 đến 3 đã xong, chặng 4 đang học</title>
+      <defs>
+        <pattern id="dots" width="22" height="22" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1.4" fill="var(--line)"/></pattern>
+      </defs>
+      <rect width="1000" height="330" fill="url(#dots)"/>
+      <!-- path -->
+      <path d="M70 250 C 170 250 170 90 270 90 S 380 250 480 250 S 590 90 690 90 S 800 250 930 210" fill="none" stroke="var(--line)" stroke-width="16" stroke-linecap="round"/>
+      <path d="M70 250 C 170 250 170 90 270 90 S 380 250 480 250 S 560 140 590 120" fill="none" stroke="var(--sun)" stroke-width="8" stroke-linecap="round" stroke-dasharray="2 14"/>
+      <!-- nodes: done -->
+      <g><circle cx="70" cy="250" r="34" fill="var(--leaf)"/><text x="70" y="262" text-anchor="middle" font-size="32" font-weight="800" fill="#fff">1</text><text x="70" y="306" text-anchor="middle" font-size="17" font-weight="700" fill="var(--ink)">Dài · ngắn</text></g>
+      <g><circle cx="270" cy="90" r="34" fill="var(--leaf)"/><text x="270" y="102" text-anchor="middle" font-size="32" font-weight="800" fill="#fff">2</text><text x="270" y="42" text-anchor="middle" font-size="17" font-weight="700" fill="var(--ink)">Âm cuối · -s -ed</text></g>
+      <g><circle cx="480" cy="250" r="34" fill="var(--leaf)"/><text x="480" y="262" text-anchor="middle" font-size="32" font-weight="800" fill="#fff">3</text><text x="480" y="306" text-anchor="middle" font-size="17" font-weight="700" fill="var(--ink)">th · r · l · v</text></g>
+      <!-- current -->
+      <g><circle cx="690" cy="90" r="44" fill="none" stroke="var(--sun)" stroke-width="6" stroke-dasharray="6 6"><animateTransform attributeName="transform" type="rotate" from="0 690 90" to="360 690 90" dur="14s" repeatCount="indefinite"/></circle><circle cx="690" cy="90" r="34" fill="var(--sea)"/><text x="690" y="102" text-anchor="middle" font-size="32" font-weight="800" fill="#fff">4</text><text x="690" y="166" text-anchor="middle" font-size="17" font-weight="700" fill="var(--ink)">Trọng âm từ</text>
+        <g transform="translate(722 40)"><rect width="92" height="30" rx="15" fill="var(--sun)"/><text x="46" y="21" text-anchor="middle" font-size="15" font-weight="800" fill="#152238">ĐANG HỌC</text></g></g>
+      <!-- locked -->
+      <g opacity=".55"><circle cx="830" cy="232" r="30" fill="var(--paper)" stroke="var(--line)" stroke-width="4"/><path d="M820 232v-6a10 10 0 0 1 20 0v6" fill="none" stroke="var(--muted)" stroke-width="4"/><rect x="815" y="230" width="30" height="20" rx="4" fill="var(--muted)"/><text x="830" y="294" text-anchor="middle" font-size="17" font-weight="700" fill="var(--ink)">Nối âm</text></g>
+      <g opacity=".55"><circle cx="940" cy="150" r="30" fill="var(--paper)" stroke="var(--line)" stroke-width="4"/><path d="M930 150v-6a10 10 0 0 1 20 0v6" fill="none" stroke="var(--muted)" stroke-width="4"/><rect x="925" y="148" width="30" height="20" rx="4" fill="var(--muted)"/><text x="940" y="102" text-anchor="middle" font-size="17" font-weight="700" fill="var(--ink)">Ngữ điệu</text></g>
+      <!-- trophy at end -->
+      <g transform="translate(905 236)"><path d="M10 0h40v14a20 20 0 0 1-40 0z" fill="var(--sun)"/><rect x="24" y="34" width="12" height="12" fill="var(--sun)"/><rect x="14" y="46" width="32" height="8" rx="3" fill="var(--sun)"/></g>
+    </svg>
+    <figcaption class="legend">
+      <span><i class="dot" style="background:var(--leaf)"></i>Đã xong (đạt ≥ 80% bài kiểm tra chặng)</span>
+      <span><i class="dot" style="background:var(--sea)"></i>Đang học</span>
+      <span><i class="dot" style="background:var(--line)"></i>Khoá, mở khi chặng trước đạt</span>
+    </figcaption>
+  </figure>
+</header>
+
+<!-- ======================= ELSA REFERENCE ======================= -->
+<section id="elsa">
+  <div class="sechead">
+    <span class="kicker">Nền tảng tham khảo</span>
+    <h2>ELSA tổ chức bài học thế nào</h2>
+    <p class="lead">Bốn ý cốt lõi lấy từ tài liệu công khai của ELSA Speak. Lộ trình bên dưới giữ đúng bốn ý này.</p>
+  </div>
+  <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr))">
+    <div class="card"><h3>1 · Đánh giá đầu vào</h3><p>Đọc vài câu, máy chấm Phát âm, Độ trôi chảy và Ngữ điệu, rồi dựng lộ trình riêng nhắm vào điểm yếu.</p></div>
+    <div class="card"><h3>2 · Lộ trình chia Unit</h3><p>Mỗi Unit có 6–10 bài với nhiều dạng game. Học xong thì mở Unit sau.</p></div>
+    <div class="card"><h3>3 · Năm kỹ năng chấm điểm</h3><div class="skills" style="margin-top:6px"><span>Phát âm</span><span>Trôi chảy</span><span>Ngữ điệu</span><span>Trọng âm từ</span><span>Nghe</span></div></div>
+    <div class="card"><h3>4 · Game hoá</h3><p>Điểm, cấp độ, bảng xếp hạng, nhắc học mỗi ngày. Phản hồi tới từng âm vị ngay sau khi nói.</p></div>
+  </div>
+</section>
+
+<!-- ======================= STAGES ======================= -->
+<section id="chang">
+  <div class="sechead">
+    <span class="kicker">Lộ trình 6 chặng</span>
+    <h2>Học từ lỗi gây hiểu nhầm nhiều nhất</h2>
+    <p class="lead">Thứ tự chặng xếp theo mức ảnh hưởng tới việc người Mỹ nghe hiểu bạn: âm cuối và nguyên âm dài–ngắn làm đổi nghĩa từ nên học trước; ngữ điệu học sau cùng.</p>
+  </div>
+  <div class="grid g2">
+    <div class="card stage"><span class="badge" style="background:var(--leaf)">1</span><div><h3>Nguyên âm dài – ngắn</h3><ul><li><span class="ipa">/iː/–/ɪ/, /uː/–/ʊ/, /æ/–/ɛ/, /ɑ/–/ʌ/</span></li><li>Mục tiêu: không nhầm <i>ship/sheep</i>, <i>bad/bed</i></li></ul><div class="pairs"><span>ship · sheep</span><span>full · fool</span><span>bad · bed</span><span>cup · cop</span></div></div></div>
+    <div class="card stage"><span class="badge" style="background:var(--leaf)">2</span><div><h3>Âm cuối, -s, -ed</h3><ul><li>Bật đủ <span class="ipa">/t d k p s z/</span> cuối từ</li><li>3 cách đọc -s và -ed (bảng quy chuẩn bên dưới)</li></ul><div class="pairs"><span>right · ride · rice</span><span>works · plays · watches</span><span>walked · played · wanted</span></div></div></div>
+    <div class="card stage"><span class="badge" style="background:var(--leaf)">3</span><div><h3>Phụ âm khó với người Việt</h3><ul><li><span class="ipa">/θ ð/, /r/–/l/, /v/–/w/, /ʃ/–/s/, /z/, /dʒ/</span></li><li>Cụm phụ âm đầu: <i>street, spring</i></li></ul><div class="pairs"><span>think · sink</span><span>light · right</span><span>vest · west</span><span>she · sea</span></div></div></div>
+    <div class="card stage"><span class="badge" style="background:var(--sea)">4</span><div><h3>Trọng âm từ</h3><ul><li>Danh từ 2 âm tiết nhấn đầu, động từ nhấn sau</li><li>Đuôi <i>-tion, -ic, -ity</i> quyết định vị trí nhấn</li></ul><div class="pairs"><span>PREsent · preSENT</span><span>phoTOgraphy</span><span>ecoNOmic</span></div></div></div>
+    <div class="card stage"><span class="badge" style="background:var(--muted)">5</span><div><h3>Nối âm và âm yếu</h3><ul><li>Phụ âm cuối nối nguyên âm đầu: <i>pick it up</i></li><li>Flap t (<i>water</i>), schwa ở từ chức năng (<i>to, for, and</i>)</li></ul><div class="pairs"><span>check‿it‿out</span><span>wa[ɾ]er</span><span>fish ən chips</span></div></div></div>
+    <div class="card stage"><span class="badge" style="background:var(--muted)">6</span><div><h3>Ngữ điệu và nhịp câu</h3><ul><li>Câu kể, câu hỏi Wh- hạ giọng; câu hỏi Yes/No lên giọng</li><li>Nhấn từ mang nghĩa, lướt từ chức năng</li></ul><div class="pairs"><span>Where are you going? ↘</span><span>Are you ready? ↗</span></div></div></div>
+  </div>
+</section>
+
+<!-- ======================= LESSON LOOP ======================= -->
+<section id="baihoc">
+  <div class="sechead">
+    <span class="kicker">Cấu trúc một bài</span>
+    <h2>Sáu bước, mỗi bước là một mini-game</h2>
+    <p class="lead">Mọi bài trong chặng đi đúng vòng này, khoảng 12–15 phút. Cột phải ghi chỗ tương ứng trong công cụ của bạn.</p>
+  </div>
+  <div class="loop">
+    <div class="step"><span class="n">1</span>
+      <svg viewBox="0 0 42 42" aria-hidden="true"><circle cx="21" cy="21" r="19" fill="var(--sea-soft)"/><ellipse cx="21" cy="24" rx="11" ry="6" fill="var(--berry)"/><rect x="12" y="20" width="18" height="3" rx="1.5" fill="#fff"/></svg>
+      <b>Xem khẩu hình</b><span class="note">Môi, lưỡi, hàm đặt đâu. Sub Study: thẻ từ → Phiên âm & hướng dẫn</span></div>
+    <div class="step"><span class="n">2</span>
+      <svg viewBox="0 0 42 42" aria-hidden="true"><circle cx="21" cy="21" r="19" fill="var(--sea-soft)"/><path d="M13 16h6v10h-6zM23 16h6v10h-6z" fill="var(--sea)"/><path d="M17 30l4 4 4-4" stroke="var(--sun)" stroke-width="3" fill="none"/></svg>
+      <b>Nghe – chọn</b><span class="note">Phân biệt cặp âm tối thiểu. Mini-game ngay bên dưới</span></div>
+    <div class="step"><span class="n">3</span>
+      <svg viewBox="0 0 42 42" aria-hidden="true"><circle cx="21" cy="21" r="19" fill="var(--sea-soft)"/><rect x="16" y="10" width="10" height="16" rx="5" fill="var(--sea)"/><path d="M12 22a9 9 0 0 0 18 0M21 31v4" stroke="var(--sea)" stroke-width="3" fill="none"/></svg>
+      <b>Nói từ</b><span class="note">Đọc từng từ, xem âm xanh/đỏ. Sub Study: tab 6 Đọc theo AI</span></div>
+    <div class="step"><span class="n">4</span>
+      <svg viewBox="0 0 42 42" aria-hidden="true"><circle cx="21" cy="21" r="19" fill="var(--sea-soft)"/><path d="M9 15h24M9 21h18M9 27h22" stroke="var(--sea)" stroke-width="3.5" stroke-linecap="round"/></svg>
+      <b>Nói câu</b><span class="note">Shadowing theo mẫu, ghi âm nghe lại. Sub Study: tab 4</span></div>
+    <div class="step"><span class="n">5</span>
+      <svg viewBox="0 0 42 42" aria-hidden="true"><circle cx="21" cy="21" r="19" fill="var(--sea-soft)"/><path d="M8 12h16v10H14l-4 4v-4H8z" fill="var(--sea)"/><path d="M34 18H20v9h8l4 4v-4h2z" fill="var(--sun)"/></svg>
+      <b>Nhập vai</b><span class="note">Hội thoại với AI. Sub Study: tab 5 Kịch bản + AI</span></div>
+    <div class="step"><span class="n">6</span>
+      <svg viewBox="0 0 42 42" aria-hidden="true"><circle cx="21" cy="21" r="19" fill="var(--sea-soft)"/><path d="M13 21l6 6 11-12" stroke="var(--leaf)" stroke-width="4" fill="none" stroke-linecap="round"/></svg>
+      <b>Kiểm tra</b><span class="note">Đạt ≥ 80% để mở chặng sau. Versant Lab: Practice by part</span></div>
+  </div>
+</section>
+
+<!-- ======================= MINI GAME ======================= -->
+<section id="game">
+  <div class="sechead">
+    <span class="kicker">Chơi thử · Bước 2</span>
+    <h2>Nghe – chọn: cặp âm tối thiểu</h2>
+    <p class="lead">Bấm <b>Nghe</b>, máy đọc một trong hai từ. Chọn đúng từ bạn nghe (+10 XP). Sau đó <b>nói lại</b> từ đó: máy chấm của bạn chấm từng âm (+20 XP nếu đạt). Bấm <b>Tiếp</b> để sang câu sau.</p>
+  </div>
+  <div class="card game">
+    <div class="gametop">
+      <span class="tag" id="gpair">Chặng 1 · /iː/ – /ɪ/</span>
+      <span class="chip"><span>Câu <b id="gq">1</b>/10</span><span>· Đúng <b id="gscore">0</b></span><span>· Chuỗi <b id="gstreak">0</b></span></span>
+    </div>
+    <button class="play" id="gplay" type="button"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9zM16 8a5 5 0 0 1 0 8M18.5 5.5a9 9 0 0 1 0 13" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/></svg>Nghe</button>
+    <div class="choices">
+      <button class="big" id="gA" type="button">ship<small>/ʃɪp/</small></button>
+      <button class="big" id="gB" type="button">sheep<small>/ʃiːp/</small></button>
+    </div>
+    <p class="msg" id="gmsg" aria-live="polite">Bấm Nghe để bắt đầu.</p>
+    <div class="say" id="say" hidden>
+      <div class="saybig">Nói lại: <span id="sayword">sheep</span> <span class="ipa note" id="sayipa"></span></div>
+      <div class="row"><button class="rec" id="sayrec" type="button" aria-pressed="false">🎤 Bấm và nói</button><button class="ghost" id="saymodel" type="button">🔊 Mẫu</button><button class="ghost" id="sayplay" type="button" disabled>▶ Nghe lại giọng tôi</button></div>
+      <div class="msg" id="sayres" aria-live="polite">Máy chấm sẽ tô từng âm: xanh đúng, vàng gần đúng, đỏ sai hoặc mất âm. +20 XP nếu đạt từ 80 điểm.</div>
+      <div class="phs" id="sayphs"></div>
+      <div class="aibox" id="sayai" hidden></div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+      <button class="ghost" id="gslow" type="button">🐢 Nghe chậm cả hai</button>
+      <button class="ghost" id="gnext" type="button" hidden>Tiếp ▸</button>
+      <button class="ghost" id="gnew" type="button">Chơi lại</button>
+    </div>
+    <p class="note" style="text-align:center">Dùng giọng đọc tiếng Anh có sẵn trên máy. Chrome hoặc Edge cho giọng Mỹ rõ nhất.</p>
+  </div>
+</section>
+
+<!-- ======================= MOUTHS ======================= -->
+<section id="khauhinh">
+  <div class="sechead">
+    <span class="kicker">Hình khẩu hình</span>
+    <h2>Năm dáng miệng cần nhớ</h2>
+    <p class="lead">Nhìn trước gương khi luyện. Phần lớn lỗi của người Việt nằm ở năm dáng này.</p>
+  </div>
+  <div class="mouths">
+    <div class="mouth">
+      <svg viewBox="0 0 110 80" aria-hidden="true"><ellipse cx="55" cy="40" rx="46" ry="14" fill="var(--berry)"/><rect x="18" y="33" width="74" height="7" rx="3" fill="#fff"/><rect x="22" y="41" width="66" height="5" rx="2" fill="#fff" opacity=".85"/></svg>
+      <b>/iː/</b><span class="note">Môi bành như cười, răng gần khít. <i>see, team</i></span></div>
+    <div class="mouth">
+      <svg viewBox="0 0 110 80" aria-hidden="true"><circle cx="55" cy="40" r="20" fill="var(--berry)"/><circle cx="55" cy="40" r="9" fill="#3a1020"/></svg>
+      <b>/uː/ /w/</b><span class="note">Môi tròn, chu ra trước. <i>food, we</i></span></div>
+    <div class="mouth">
+      <svg viewBox="0 0 110 80" aria-hidden="true"><ellipse cx="55" cy="40" rx="30" ry="28" fill="var(--berry)"/><ellipse cx="55" cy="46" rx="20" ry="16" fill="#3a1020"/><ellipse cx="55" cy="58" rx="16" ry="6" fill="#e78ca0"/></svg>
+      <b>/ɑ/ /æ/</b><span class="note">Hàm hạ thấp, miệng mở rộng. <i>hot, cat</i></span></div>
+    <div class="mouth">
+      <svg viewBox="0 0 110 80" aria-hidden="true"><ellipse cx="55" cy="44" rx="40" ry="16" fill="var(--berry)"/><rect x="25" y="28" width="60" height="12" rx="3" fill="#fff"/><path d="M25 46q30 6 60 0" stroke="#e78ca0" stroke-width="6" fill="none"/></svg>
+      <b>/f/ /v/</b><span class="note">Răng trên chạm nhẹ môi dưới, thổi hơi. <i>very, five</i></span></div>
+    <div class="mouth">
+      <svg viewBox="0 0 110 80" aria-hidden="true"><ellipse cx="55" cy="40" rx="42" ry="17" fill="var(--berry)"/><rect x="22" y="27" width="66" height="9" rx="3" fill="#fff"/><rect x="22" y="44" width="66" height="8" rx="3" fill="#fff"/><ellipse cx="55" cy="40" rx="18" ry="6" fill="#e78ca0"/></svg>
+      <b>/θ/ /ð/</b><span class="note">Đầu lưỡi thò nhẹ giữa hai hàm răng. <i>think, this</i></span></div>
+  </div>
+</section>
+
+<!-- ======================= TIPS ======================= -->
+<section id="kinhnghiem">
+  <div class="sechead">
+    <span class="kicker">Kinh nghiệm học</span>
+    <h2>Tám thói quen giúp tiến bộ nhanh</h2>
+  </div>
+  <div class="tips">
+    <div class="tip"><b>15 phút mỗi ngày</b><span>Đều đặn thắng học dồn. Một bài sáu bước vừa đúng 15 phút.</span></div>
+    <div class="tip"><b>Ghi âm rồi nghe lại</b><span>Tai nhận ra lỗi của chính mình nhanh hơn khi nghe bản ghi, không phải lúc đang nói.</span></div>
+    <div class="tip"><b>Cặp âm tối thiểu trước</b><span>Nghe phân biệt được <i>ship/sheep</i> rồi mới nói được. Nghe đi trước miệng.</span></div>
+    <div class="tip"><b>Âm cuối là ưu tiên số 1</b><span>Tiếng Việt không bật âm cuối, nên người Việt hay nuốt <i>-s, -t, -d</i>. Lỗi này làm đổi nghĩa nhiều nhất.</span></div>
+    <div class="tip"><b>Học từ kèm trọng âm</b><span>Ghi từ mới luôn có dấu nhấn: <i>phoTOgraphy</i>. Sai trọng âm khó hiểu hơn sai một nguyên âm.</span></div>
+    <div class="tip"><b>Shadowing theo cụm</b><span>Nhại theo từng cụm 3–5 từ, không từng từ. Giữ nguyên ngữ điệu của người nói.</span></div>
+    <div class="tip"><b>Tra từ điển có IPA và âm Mỹ</b><span>Đọc phiên âm, bấm nghe giọng US. Đừng đoán cách đọc từ mặt chữ.</span></div>
+    <div class="tip"><b>Rõ ràng hơn giọng chuẩn</b><span>Mục tiêu là người nghe hiểu ngay. Giọng có chút Việt không sao nếu âm cuối, trọng âm và ngữ điệu đúng.</span></div>
+  </div>
+</section>
+
+<!-- ======================= SOURCES ======================= -->
+<section id="nguon">
+  <div class="sechead">
+    <span class="kicker">Nguồn đã duyệt</span>
+    <h2>Web tiếng Anh chính thống của Mỹ</h2>
+    <p class="lead">Ưu tiên nguồn của cơ quan nhà nước Mỹ, trường đại học và nhà xuất bản từ điển Mỹ. Đều miễn phí trừ khi ghi khác.</p>
+  </div>
+  <div class="grid g3">
+    <div class="card src"><span class="tag">Bộ Ngoại giao Hoa Kỳ</span><a href="https://americanenglish.state.gov/" target="_blank" rel="noopener">American English</a><span class="note">Tài liệu, trò chơi, audio cho người học mọi trình độ. Có Color Vowel Chart (bảng nguyên âm theo màu).</span></div>
+    <div class="card src"><span class="tag">Đài VOA (chính phủ Mỹ tài trợ)</span><a href="https://learningenglish.voanews.com/" target="_blank" rel="noopener">VOA Learning English</a><span class="note">Tin tức đọc chậm giọng Mỹ, có bản chữ. Hợp luyện nghe và shadowing.</span></div>
+    <div class="card src"><span class="tag">Đại học Iowa</span><a href="https://soundsofspeech.uiowa.edu/" target="_blank" rel="noopener">Sounds of Speech</a><span class="note">Hoạt hình mặt cắt miệng cho từng phụ âm, nguyên âm tiếng Anh Mỹ. Ứng dụng di động có phí.</span></div>
+    <div class="card src"><span class="tag">Merriam-Webster</span><a href="https://www.learnersdictionary.com/" target="_blank" rel="noopener">Learner's Dictionary</a><span class="note">Từ điển cho người học, có phát âm giọng Mỹ và câu ví dụ.</span></div>
+    <div class="card src"><span class="tag">Đại học Purdue</span><a href="https://www.cla.purdue.edu/place/resources-and-scholarship/language-resources/pronunciation.html" target="_blank" rel="noopener">PLACE · Pronunciation Resources</a><span class="note">Danh sách công cụ phát âm Mỹ do chương trình tiếng Anh của Purdue chọn lọc.</span></div>
+    <div class="card src"><span class="tag">Ứng dụng tham khảo</span><a href="https://elsaspeak.com/" target="_blank" rel="noopener">ELSA Speak</a><span class="note">Chấm phát âm tới từng âm, lộ trình cá nhân. Có bản miễn phí và trả phí.</span></div>
+  </div>
+</section>
+
+<!-- ======================= STANDARD ======================= -->
+<section id="quychuan">
+  <div class="sechead">
+    <span class="kicker">Quy chuẩn phát âm</span>
+    <h2>Chuẩn General American: 24 phụ âm, 17 nguyên âm, 8 quy tắc</h2>
+    <p class="lead">General American là giọng chuẩn của truyền hình và từ điển Mỹ. Bảng dùng ký hiệu IPA kiểu từ điển Mỹ; cột cuối ghi lỗi người Việt hay gặp. Bấm vào từ ví dụ để nghe.</p>
+  </div>
+  <div class="tabs" role="tablist" aria-label="Bảng quy chuẩn">
+    <button role="tab" id="t-cons" aria-controls="p-cons" aria-selected="true" type="button">Phụ âm (24)</button>
+    <button role="tab" id="t-vow" aria-controls="p-vow" aria-selected="false" type="button">Nguyên âm (17)</button>
+    <button role="tab" id="t-rule" aria-controls="p-rule" aria-selected="false" type="button">Quy tắc (8)</button>
+  </div>
+
+  <div id="p-cons" role="tabpanel" aria-labelledby="t-cons" class="tablewrap">
+    <table>
+      <thead><tr><th>IPA</th><th>Ví dụ</th><th>Cách tạo âm</th><th>Lỗi người Việt hay gặp</th></tr></thead>
+      <tbody id="consBody"></tbody>
+    </table>
+  </div>
+  <div id="p-vow" role="tabpanel" aria-labelledby="t-vow" class="tablewrap" hidden>
+    <table>
+      <thead><tr><th>IPA</th><th>Ví dụ</th><th>Khẩu hình</th><th>Lỗi người Việt hay gặp</th></tr></thead>
+      <tbody id="vowBody"></tbody>
+    </table>
+  </div>
+  <div id="p-rule" role="tabpanel" aria-labelledby="t-rule" hidden>
+    <div class="rules">
+      <div class="card rule"><h3>1 · Đuôi -s / -es</h3><ul><li><span class="ipa">/s/</span> sau âm vô thanh p t k f θ: <i>cups, books</i></li><li><span class="ipa">/z/</span> sau nguyên âm và âm hữu thanh: <i>dogs, plays</i></li><li><span class="ipa">/ɪz/</span> sau s z ʃ ʒ tʃ dʒ: <i>buses, watches</i></li></ul></div>
+      <div class="card rule"><h3>2 · Đuôi -ed</h3><ul><li><span class="ipa">/t/</span> sau âm vô thanh: <i>walked, stopped</i></li><li><span class="ipa">/d/</span> sau âm hữu thanh: <i>played, called</i></li><li><span class="ipa">/ɪd/</span> sau t, d: <i>wanted, needed</i></li></ul></div>
+      <div class="card rule"><h3>3 · Bật hơi p, t, k</h3><p>Đầu âm tiết nhấn, <i>p t k</i> bật kèm luồng hơi: <i>pen, time, key</i>. Sau <i>s</i> thì không bật hơi: <i>spin, stop, sky</i>.</p></div>
+      <div class="card rule"><h3>4 · Flap t</h3><p>Giọng Mỹ: <i>t, d</i> giữa hai nguyên âm, sau âm nhấn, đọc lướt như <span class="ipa">[ɾ]</span> nhanh: <i>water, better, city</i>.</p><p class="ex">Không áp dụng khi âm sau được nhấn: <i>atTACK</i>.</p></div>
+      <div class="card rule"><h3>5 · Âm r rõ (rhotic)</h3><p>Giọng Mỹ luôn đọc <i>r</i>, kể cả cuối từ và trước phụ âm: <i>car, hard, teacher</i> <span class="ipa">/ˈtiːtʃɚ/</span>.</p></div>
+      <div class="card rule"><h3>6 · Trọng âm từ</h3><ul><li>Danh từ, tính từ 2 âm tiết thường nhấn âm đầu: <i>TAble, HAPpy</i></li><li>Động từ 2 âm tiết thường nhấn âm sau: <i>beGIN, deCIDE</i></li><li><i>-tion, -sion, -ic, -ical, -ity</i>: nhấn ngay trước đuôi: <i>inforMAtion, ecoNOmic</i></li><li>Danh từ ghép nhấn phần đầu: <i>BLACKboard, AIRport</i></li></ul></div>
+      <div class="card rule"><h3>7 · Âm yếu và schwa</h3><p>Âm tiết không nhấn và từ chức năng co về <span class="ipa">/ə/</span>: <i>to</i> <span class="ipa">/tə/</span>, <i>for</i> <span class="ipa">/fɚ/</span>, <i>and</i> <span class="ipa">/ən/</span>, <i>banana</i> <span class="ipa">/bəˈnænə/</span>.</p></div>
+      <div class="card rule"><h3>8 · Nối âm và ngữ điệu</h3><ul><li>Phụ âm cuối nối nguyên âm đầu từ sau: <i>turn‿off, an‿apple</i></li><li>Câu kể và câu hỏi Wh-: hạ giọng cuối câu ↘</li><li>Câu hỏi Yes/No: lên giọng cuối câu ↗</li><li>Nhấn từ mang nghĩa (danh, động, tính từ), lướt từ chức năng</li></ul></div>
+    </div>
+  </div>
+  <p class="note">Nhiều người Mỹ đọc /ɑ/ và /ɔ/ như nhau (<i>cot</i> = <i>caught</i>); cả hai cách đều được coi là chuẩn.</p>
+</section>
+
+<footer>
+  <p>Cấu trúc bài học tham khảo tài liệu công khai của ELSA Speak; nội dung, lộ trình và minh hoạ trên trang này được viết lại, không phải tài liệu chính thức của ELSA. Số liệu XP, chuỗi ngày và huy hiệu ở đầu trang là ví dụ. Bản ghi âm chỉ gửi tới máy chấm của bạn trên Modal.</p>
+</footer>
+</div>
+
+<script>
+(function(){
+  const $=s=>document.querySelector(s);
+  /* ---------- reference tables ---------- */
+  const CONS=[
+    ['p','pen, stop','Hai môi khép rồi bật, vô thanh; bật hơi đầu âm tiết','Không bật hơi, nghe thành b'],
+    ['b','bed, job','Hai môi khép rồi bật, rung thanh quản','Cuối từ bị nuốt: job → jo'],
+    ['t','time, cat','Đầu lưỡi chạm lợi sau răng trên, bật hơi','Nuốt âm cuối: cat → ca'],
+    ['d','day, bed','Như t nhưng rung thanh quản','Cuối từ đọc thành t hoặc mất'],
+    ['k','key, back','Cuống lưỡi chạm vòm mềm, bật hơi','Cuối từ bị nuốt'],
+    ['g','go, bag','Như k nhưng rung thanh quản','Cuối từ đọc thành k'],
+    ['f','five, off','Răng trên chạm môi dưới, thổi hơi','Ít lỗi'],
+    ['v','very, love','Như f nhưng rung thanh quản','Đọc thành b hoặc w: very → berry'],
+    ['θ','think, bath','Đầu lưỡi giữa hai hàm răng, thổi hơi vô thanh','Đọc thành t hoặc s: think → tink/sink'],
+    ['ð','this, mother','Như θ nhưng rung thanh quản','Đọc thành d hoặc z: this → dis'],
+    ['s','see, bus','Lưỡi gần lợi trên, hơi xì qua khe hẹp','Mất ở cuối từ và cụm phụ âm'],
+    ['z','zoo, is','Như s nhưng rung thanh quản','Đọc thành s hoặc d: zoo → soo'],
+    ['ʃ','she, wash','Lưỡi lùi về vòm, môi hơi chu, xì hơi','Đọc thành s: she → see'],
+    ['ʒ','vision, measure','Như ʃ nhưng rung thanh quản','Đọc thành z hoặc d'],
+    ['h','hat, ahead','Hơi thoát nhẹ từ họng','Bỏ mất h đầu từ'],
+    ['tʃ','chair, watch','Bắt đầu như t, bật ra thành ʃ','Đọc mềm như "ch" Việt, mất ở cuối từ'],
+    ['dʒ','job, age','Như tʃ nhưng rung thanh quản','Đọc thành z hoặc ch: job → zop'],
+    ['m','man, come','Hai môi khép, hơi qua mũi','Ít lỗi'],
+    ['n','no, ten','Đầu lưỡi chạm lợi, hơi qua mũi','Lẫn với l đầu từ (một số vùng)'],
+    ['ŋ','sing, thinking','Cuống lưỡi chạm vòm mềm, hơi qua mũi','Thêm k ở cuối hoặc đọc thành n'],
+    ['l','light, feel','Đầu lưỡi chạm lợi; cuối từ là "l tối", lưỡi vẫn chạm','Mất l cuối: feel → fee; lẫn với n'],
+    ['r','red, car','Lưỡi cuộn nhẹ về sau, không chạm vòm, môi hơi tròn','Rung lưỡi như r Việt, hoặc đọc thành z/l'],
+    ['w','we, away','Môi tròn chụm rồi mở, không dùng răng','Lẫn với v'],
+    ['j','yes, you','Lưỡi nâng gần vòm cứng như âm "i" lướt','Ít lỗi'],
+  ];
+  const VOW=[
+    ['iː','see, team','Môi bành, lưỡi cao trước, kéo dài','Đọc ngắn, lẫn với ɪ'],
+    ['ɪ','sit, ship','Ngắn, lưỡi hơi thấp và thả lỏng hơn iː','Đọc như "i" Việt dài'],
+    ['eɪ','day, make','Trượt từ e sang i','Đọc thành "ê" đơn'],
+    ['ɛ','bed, get','Miệng mở vừa, ngắn','Lẫn với æ'],
+    ['æ','cat, bad','Hàm hạ thấp, môi bành, lưỡi thấp trước','Đọc thành "e" hoặc "a" Việt'],
+    ['ɑ','hot, father','Hàm hạ thấp, lưỡi thấp sau, môi không tròn','Đọc thành "o" tròn môi'],
+    ['ɔ','law, caught','Môi hơi tròn, lưỡi thấp sau (nhiều người đọc như ɑ)','Đọc như "o" Việt'],
+    ['oʊ','go, home','Trượt từ o sang u, môi tròn dần','Đọc thành "ô" đơn'],
+    ['ʊ','book, put','Ngắn, môi hơi tròn, thả lỏng','Lẫn với uː'],
+    ['uː','food, blue','Môi tròn chu, lưỡi cao sau, kéo dài','Đọc ngắn'],
+    ['ʌ','cup, love','Ngắn, miệng mở vừa, giữa lưỡi','Đọc như "â" hoặc "a" Việt'],
+    ['ə','about, sofa','Âm yếu nhất, miệng thả lỏng, chỉ ở âm tiết không nhấn','Đọc rõ thành a/ơ đầy đủ'],
+    ['ɝ','bird, work','Nguyên âm có r, lưỡi cuộn, âm nhấn','Đọc thành "ơ" không có r'],
+    ['ɚ','teacher, better','Như ɝ nhưng ở âm tiết không nhấn','Bỏ r: teacher → tee-chơ'],
+    ['aɪ','time, my','Trượt từ a sang i','Thiếu phần trượt cuối'],
+    ['aʊ','now, house','Trượt từ a sang u, môi tròn dần','Đọc thành "ao" Việt quá ngắn'],
+    ['ɔɪ','boy, coin','Trượt từ ɔ sang i','Ít lỗi'],
+  ];
+  const row=r=>`<tr><td class="sym">/${r[0]}/</td><td class="w">${r[1]}</td><td>${r[2]}</td><td class="vn">${r[3]}</td></tr>`;
+  $('#consBody').innerHTML=CONS.map(row).join('');
+  document.addEventListener('click',e=>{const w=e.target.closest('td .w');if(w){const first=w.textContent.split(',')[0].trim();speak(first,0.8)}});
+  $('#vowBody').innerHTML=VOW.map(row).join('');
+  const tabs=[...document.querySelectorAll('[role="tab"]')];
+  tabs.forEach(t=>t.addEventListener('click',()=>{tabs.forEach(x=>{const on=x===t;x.setAttribute('aria-selected',on);document.getElementById(x.getAttribute('aria-controls')).hidden=!on;});}));
+
+  /* ---------- máy chấm (OpenPronounce trên Modal) ---------- */
+  const DEFAULT_SCORER='https://hoccodexaydung1994-boop--sub-study-pronounce-web.us-east.modal.run';
+  function scorer(){let u='';try{u=JSON.parse(localStorage.getItem('opurl')||'""')}catch(e){}return String(u||DEFAULT_SCORER).trim().replace(/\/+$/,'')}
+  const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  let mStream=null,mRec=null,chunks=[],clipUrl=null,recTimer=null;
+  async function startRec(){mStream=mStream||await navigator.mediaDevices.getUserMedia({audio:true});chunks=[];mRec=new MediaRecorder(mStream);
+    const done=new Promise(r=>{mRec.onstop=()=>r(new Blob(chunks,{type:mRec.mimeType||'audio/webm'}))});mRec.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};mRec.start();return {done}}
+  function stopRec(){clearTimeout(recTimer);try{if(mRec&&mRec.state!=='inactive')mRec.stop()}catch(e){}}
+  async function scoreClip(blob,text){
+    const fd=new FormData();fd.append('file',blob,'rec.'+((blob.type||'').includes('ogg')?'ogg':(blob.type||'').includes('mp4')?'m4a':'webm'));fd.append('expected_text',text);fd.append('lang','en');
+    const ctl=new AbortController();const t=setTimeout(()=>ctl.abort(),150000);
+    try{const r=await fetch(scorer()+'/pronunciation',{method:'POST',body:fd,signal:ctl.signal});if(!r.ok)throw new Error('máy chấm trả lỗi '+r.status);return await r.json()}
+    catch(e){if(e.name==='AbortError')throw new Error('máy chấm không trả lời sau 2,5 phút');if(e instanceof TypeError)throw new Error('không gọi được máy chấm, kiểm tra địa chỉ trong "Kết nối AI" của Sub Study');throw e}
+    finally{clearTimeout(t)}}
+  /* ---------- AI nhận xét: dùng khoá đã lưu trong Sub Study (cùng trang web nên đọc chung) ---------- */
+  const LSget=(k,d)=>{try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}};
+  const AI_DEF={anthropic:'claude-haiku-5-5',openai:'gpt-4o-mini'};
+  function aiConf(){const pr=LSget('provider','anthropic');const key=LSget('apikey_'+pr,'');return key?{pr,key,model:LSget('model_'+pr,AI_DEF[pr]||'')}:null}
+  async function askAI(prompt){const c=aiConf();if(!c)return null;let r;
+    if(c.pr==='openai'){r=await fetch('https://api.openai.com/v1/chat/completions',{method:'POST',headers:{'content-type':'application/json','authorization':'Bearer '+c.key},body:JSON.stringify({model:c.model,max_tokens:300,messages:[{role:'user',content:prompt}]})});
+      if(!r.ok)throw new Error(r.status===401?'khoá OpenAI bị từ chối':'OpenAI trả lỗi '+r.status);const j=await r.json();return (j.choices&&j.choices[0]&&j.choices[0].message&&j.choices[0].message.content||'').trim()}
+    r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'content-type':'application/json','x-api-key':c.key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:c.model,max_tokens:300,messages:[{role:'user',content:prompt}]})});
+    if(!r.ok)throw new Error(r.status===401?'khoá Claude bị từ chối':'Claude trả lỗi '+r.status);const j=await r.json();return (j.content||[]).map(x=>x.text||'').join('').trim()}
+  (function(){const c=aiConf();$('#aiState').textContent=c?(c.pr==='openai'?'OpenAI':'Claude')+' · '+c.model:'chưa có khoá';$('#aichip').title=c?'Dùng khoá đã lưu trong Kết nối AI của Sub Study':'Mở Sub Study → Kết nối AI → dán khoá Claude hoặc OpenAI → Lưu';})();
+  async function aiComment(word,ipa,res,phones){const box=$('#sayai');const c=aiConf();if(!c){box.hidden=true;return}
+    box.hidden=false;box.textContent='🤖 AI đang nhận xét…';
+    const wrong=phones.filter(p=>(+p.confidence||0)>0).map(p=>`/${p.expected}/ → ${p.heard?'/'+p.heard+'/':'mất'}`).join(', ')||'không có';
+    const prompt=`Bạn là giáo viên phát âm tiếng Anh Mỹ cho người Việt. Học viên vừa đọc từ "${word}" /${ipa}/.\nMáy chấm âm vị cho ${Math.round(+res.score||0)}/100. Máy nghe thành: "${String(res.transcribe||'').toLowerCase()}". Âm sai: ${wrong}.\nViết bằng tiếng Việt, tối đa 4 dòng ngắn, mỗi dòng bắt đầu bằng "• ": (1) nhận xét một câu về lần đọc; (2) với âm sai nặng nhất: đặt lưỡi, môi, hàm thế nào và luồng hơi ra sao; (3) một mẹo tập ngay, ví dụ một cặp từ tối thiểu; (4) một câu động viên ngắn. Nếu không có âm sai thì khen ngắn và gợi ý luyện câu có từ đó. Không chào hỏi.`;
+    try{const t=await askAI(prompt);box.innerHTML='<b>🤖 Nhận xét</b>\n'+esc(t||'(AI không trả lời)')}catch(e){box.textContent='🤖 Chưa nhận xét được: '+(e.message||e)+'. Kiểm tra khoá trong Kết nối AI của Sub Study.'}}
+  function setScorer(state,ok){$('#scorerState').textContent=state;$('#scorer').style.borderColor=ok===true?'var(--leaf)':ok===false?'var(--berry)':'var(--line)'}
+
+  /* ---------- HUD ---------- */
+  let xp=620,level=4;
+  function addXP(n){xp+=n;if(xp>=1000){xp-=1000;level++;}const f=$('#xpfill');f.style.width=(xp/10)+'%';$('#xpnum').textContent=xp;$('#xpnum').parentElement.firstChild.textContent='Cấp '+level+' · ';}
+  $('#xpfill').style.width='62%';
+
+  /* ---------- minimal-pair game ---------- */
+  const PAIRS=[
+    ['Chặng 1 · /iː/ – /ɪ/','ship','ʃɪp','sheep','ʃiːp'],
+    ['Chặng 1 · /iː/ – /ɪ/','live','lɪv','leave','liːv'],
+    ['Chặng 1 · /æ/ – /ɛ/','bad','bæd','bed','bɛd'],
+    ['Chặng 1 · /uː/ – /ʊ/','pull','pʊl','pool','puːl'],
+    ['Chặng 2 · âm cuối','right','raɪt','ride','raɪd'],
+    ['Chặng 2 · âm cuối','rice','raɪs','rise','raɪz'],
+    ['Chặng 3 · /θ/ – /s/','think','θɪŋk','sink','sɪŋk'],
+    ['Chặng 3 · /r/ – /l/','light','laɪt','right','raɪt'],
+    ['Chặng 3 · /v/ – /b/','very','ˈvɛri','berry','ˈbɛri'],
+    ['Chặng 3 · /ʃ/ – /s/','she','ʃiː','see','siː'],
+    ['Chặng 3 · /v/ – /w/','vest','vɛst','west','wɛst'],
+    ['Chặng 1 · /ɑ/ – /ʌ/','cop','kɑp','cup','kʌp'],
+  ];
+  let voices=[];function lv(){try{voices=speechSynthesis.getVoices()}catch(e){}}
+  if('speechSynthesis' in window){lv();speechSynthesis.onvoiceschanged=lv;}
+  function speak(t,rate){return new Promise(res=>{try{if(!('speechSynthesis' in window))return res();speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang='en-US';u.rate=rate||0.9;const v=voices.find(v=>/^en[-_]US/i.test(v.lang))||voices.find(v=>/^en/i.test(v.lang));if(v)u.voice=v;u.onend=res;u.onerror=res;setTimeout(res,2500);speechSynthesis.speak(u)}catch(e){res()}})}
+  let order=[],qi=0,score=0,streak=0,target=null,answered=true;
+  function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+  function setQ(){const p=order[qi];$('#gpair').textContent=p[0];$('#gA').innerHTML=`${p[1]}<small>/${p[2]}/</small>`;$('#gB').innerHTML=`${p[3]}<small>/${p[4]}/</small>`;
+    $('#gA').className='big';$('#gB').className='big';$('#gq').textContent=qi+1;target=null;answered=true;}
+  function newGame(){$('#say').hidden=true;$('#gnext').hidden=true;order=shuffle(PAIRS.slice()).slice(0,10);qi=0;score=0;streak=0;$('#gscore').textContent=0;$('#gstreak').textContent=0;setQ();$('#gmsg').textContent='Bấm Nghe để bắt đầu.';}
+  $('#gplay').addEventListener('click',()=>{if(qi>=order.length){newGame();}const p=order[qi];if(target===null||answered){target=Math.random()<.5?'A':'B';answered=false;$('#gA').className='big';$('#gB').className='big';$('#gmsg').textContent='Từ nào? Chọn một trong hai.';}
+    speak(target==='A'?p[1]:p[3]);});
+  function choose(side){if(answered||target===null){$('#gmsg').textContent='Bấm Nghe trước đã.';return}answered=true;const p=order[qi];const ok=side===target;
+    const btn=$('#g'+side),right=$('#g'+target);right.classList.add('ok');if(!ok)btn.classList.add('no');
+    if(ok){score++;streak++;addXP(10);$('#gmsg').textContent=streak>=3?`Đúng! Chuỗi ${streak} câu 🔥`:'Đúng rồi!';}else{streak=0;$('#gmsg').textContent=`Chưa đúng. Máy đọc "${target==='A'?p[1]:p[3]}".`;}
+    $('#gscore').textContent=score;$('#gstreak').textContent=streak;const c=$('#gscore').parentElement;c.classList.remove('pop');void c.offsetWidth;c.classList.add('pop');
+    const w=target==='A'?p[1]:p[3],ipa=target==='A'?p[2]:p[4];sayWord=w;$('#sayword').textContent=w;$('#sayipa').textContent='/'+ipa+'/';$('#sayres').textContent='Bấm 🎤 rồi nói "'+w+'". Ghi âm tự dừng sau 3 giây.';$('#sayphs').innerHTML='';$('#sayai').hidden=true;$('#sayplay').disabled=true;$('#say').hidden=false;$('#gnext').hidden=false;}
+  let sayWord='';
+  function nextQ(){$('#say').hidden=true;$('#gnext').hidden=true;stopRec();qi++;if(qi>=order.length){$('#gmsg').textContent=`Xong vòng: ${score}/10 đúng. ${score>=8?'Đạt chuẩn mở chặng sau!':'Chơi lại để đạt 8/10.'} Bấm Nghe để chơi vòng mới.`;return}setQ();$('#gmsg').textContent='Bấm Nghe cho câu tiếp theo.';}
+  $('#gnext').addEventListener('click',nextQ);
+  $('#saymodel').addEventListener('click',()=>speak(sayWord,0.75));
+  $('#sayplay').addEventListener('click',()=>{if(clipUrl){try{speechSynthesis.cancel()}catch(e){}new Audio(clipUrl).play().catch(()=>{})}});
+  $('#sayrec').addEventListener('click',async()=>{const b=$('#sayrec');
+    if(b.getAttribute('aria-pressed')==='true'){stopRec();return}
+    let done;try{({done}=await startRec())}catch(e){$('#sayres').textContent='Trình duyệt chưa cho dùng micro: bấm biểu tượng 🔒 cạnh địa chỉ web → Microphone → Allow.';return}
+    b.setAttribute('aria-pressed','true');b.textContent='■ Dừng';$('#sayres').textContent='Đang ghi… nói "'+sayWord+'"';recTimer=setTimeout(stopRec,3000);
+    const blob=await done;b.setAttribute('aria-pressed','false');b.textContent='🎤 Bấm và nói';
+    if(clipUrl)URL.revokeObjectURL(clipUrl);clipUrl=URL.createObjectURL(blob);$('#sayplay').disabled=false;
+    $('#sayres').textContent='Đang chấm… (lần đầu sau lúc nghỉ có thể mất 1–2 phút)';setScorer('đang chấm…');
+    try{const r=await scoreClip(blob,sayWord);setScorer('đã kết nối',true);const sc=Math.round(+r.score||0);
+      const err=((r.differences&&r.differences.errors)||[]).find(e=>String(e.word).toLowerCase()===sayWord.toLowerCase());
+      let phones=err&&err.phones&&err.phones.length?err.phones:null;
+      if(!phones){const g=(r.differences&&r.differences.expected_phones||[])[0]||[];phones=g.map(x=>({expected:x,heard:x,confidence:0}))}
+      $('#sayphs').innerHTML=phones.map(p=>{const c=+p.confidence||0;const cls=c>0.5?'bad':c>0?'near':'ok';return `<span class="ph ${cls}" title="${c>0?(p.heard?'nghe thành /'+esc(p.heard)+'/':'bị mất'):'đúng'}">${esc(p.expected)}${c>0?`<small>${p.heard?esc(p.heard):'∅'}</small>`:''}</span>`}).join('');
+      const worst=phones.slice().sort((a,b)=>(+b.confidence||0)-(+a.confidence||0))[0];
+      aiComment(sayWord,$('#sayipa').textContent.replace(/\//g,''),r,phones);
+      if(!err&&sc>=80){$('#sayres').innerHTML=`<b>${sc}/100</b> · Chuẩn rồi! +20 XP`;addXP(20)}
+      else if(!err){$('#sayres').innerHTML=`<b>${sc}/100</b> · Các âm đều đúng, nhưng đọc chưa tự nhiên. Bấm 🔊 Mẫu, chú ý độ dài và trọng âm, rồi thử lại.`}
+      else $('#sayres').innerHTML=`<b>${sc}/100</b> · Âm <span class="ipa">/${esc(worst.expected)}/</span> chưa đúng${worst.heard?', máy nghe thành <span class="ipa">/'+esc(worst.heard)+'/</span>':', bị mất'}. Bấm 🔊 Mẫu rồi thử lại.`;
+    }catch(e){setScorer('lỗi',false);$('#sayres').textContent='Chưa chấm được: '+(e.message||e)}});
+  $('#gA').addEventListener('click',()=>choose('A'));$('#gB').addEventListener('click',()=>choose('B'));
+  $('#gslow').addEventListener('click',async()=>{const p=order[Math.min(qi,order.length-1)];await speak(p[1],0.6);await new Promise(r=>setTimeout(r,350));await speak(p[3],0.6);});
+  $('#gnew').addEventListener('click',newGame);
+  newGame();
+})();
+</script>
+</body>
+</html>
